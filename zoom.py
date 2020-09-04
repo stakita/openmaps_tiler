@@ -1,5 +1,7 @@
 import math
 import tile_dl
+import json
+import sh
 
 try:
     from PIL import Image
@@ -106,24 +108,87 @@ def find_best_zoom(xl, xh, yl, yh, xtiles, ytiles, zoom_max=19):
             return zoom
     return zoom_max
 
+def load_points_file(filename):
+    with open(filename) as fd:
+        body = fd.read()
+    points_data = json.loads(body)
+    return points_data
+
+
+def get_boundary_extents(points_list):
+    xl, xh, yl, yh = None, None, None, None
+
+    for point in points_list:
+        lat = point['lat']
+        lon = point['lon']
+        if xl is None:
+            xl = lon
+            xh = lon
+            yl = lat
+            yh = lat
+        if lat < yl:
+            yl = lat
+        if lat > yh:
+            yh = lat
+        if lon < xl:
+            xl = lon
+        if lon > xh:
+            xh = lon
+
+    return xl, xh, yl, yh
+
+def get_ll_points_array(points_list):
+    raw_points = []
+    for point in points_list:
+        y = point['lat']
+        x = point['lon']
+        raw_points.append((x, y))
+
+def get_mapped_points_array(points_list, zoom):
+    mapped_points = []
+    for point in points_list:
+        y = ydeg2scaled(point['lat'], zoom)
+        x = xdeg2scaled(point['lon'], zoom)
+        mapped_points.append((x, y))
+    return mapped_points
+
+def in_tile_fn(xtile, ytile):
+    def in_tile(point):
+        xpoint, ypoint = point
+        if int(xpoint) == int(xtile) and int(ypoint) == int(ytile):
+            return True
+    return in_tile
 
 def main():
-    x1 = -122.1143822
-    y1 = 37.4566362
 
-    x2 = -122.1108545
-    y2 = 37.4528755
+    points_filename = 'output.json'
+    points = load_points_file(points_filename)
 
-    xil = min(x1, x2) # x input lo
-    xih = max(x1, x2) # x input hi
-    yil = min(y1, y2) # y input lo
-    yih = max(y1, y2) # y input hi
+    print(points[0])
+    xil, xih, yil, yih = get_boundary_extents(points)
+
+    print(xil, xih, yil, yih)
+
+
+
+    # return
+
+    # x1 = -122.1143822
+    # y1 = 37.4566362
+
+    # x2 = -122.1108545
+    # y2 = 37.4528755
+
+    # xil = min(x1, x2) # x input lo
+    # xih = max(x1, x2) # x input hi
+    # yil = min(y1, y2) # y input lo
+    # yih = max(y1, y2) # y input hi
     xis = xih - xil # x input span
     yis = yih - yil # x input span
 
     border_factor = 1.2
-    x_tiles = 2
-    y_tiles = 1
+    x_tiles = 5
+    y_tiles = 4
     # x_tiles = 1
     # y_tiles = 1
     zoom_max = 19
@@ -159,6 +224,8 @@ def main():
     ytl = int(ysl)     # y tile lo
     yth = int(ysh)     # y tile hi
 
+    mapped_points = get_mapped_points_array(points, zoom_factor)
+
     file_map = {}
 
     for lon_tile in range(xtl, xth + 1):
@@ -177,18 +244,20 @@ def main():
             print(lon_tile, lat_tile)
             im = Image.open(file_map[key]).convert('RGB')
             dr = ImageDraw.Draw(im)
-            color = ImageColor.getrgb('red')
-            dr.line([(0, 0), (0, 255)], fill=color, width=1)
-            dr.line([(0, 0), (255, 0)], fill=color, width=1)
-            font = ImageFont.load_default()
-            lon_deg_min = xindex2lon(lon_tile, zoom_factor)
-            lat_deg_min = yindex2lat(lat_tile, zoom_factor)
-            lon_deg_max = xindex2lon(lon_tile + 1, zoom_factor)
-            lat_deg_max = yindex2lat(lat_tile + 1, zoom_factor)
-            dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
-            dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
 
-            color = ImageColor.getrgb('blue')
+            # grid lines
+            # color = ImageColor.getrgb('red')
+            # dr.line([(0, 0), (0, 255)], fill=color, width=1)
+            # dr.line([(0, 0), (255, 0)], fill=color, width=1)
+            # font = ImageFont.load_default()
+            # lon_deg_min = xindex2lon(lon_tile, zoom_factor)
+            # lat_deg_min = yindex2lat(lat_tile, zoom_factor)
+            # lon_deg_max = xindex2lon(lon_tile + 1, zoom_factor)
+            # lat_deg_max = yindex2lat(lat_tile + 1, zoom_factor)
+            # dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
+            # dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
+
+            color = ImageColor.getrgb('black')
 
             if xsl > lon_tile and xsl < lon_tile + 1:
                 print('xsl:', xsl)
@@ -214,6 +283,16 @@ def main():
                 y_offset = (ysh - math.floor(ysh)) * 256
                 dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
+            in_tile = in_tile_fn(lon_tile, lat_tile)
+            tile_ll_points = list(filter(in_tile, mapped_points))
+            tile_inter_points = list(map(lambda x: (int(divmod(x[0], 1)[1] * 256), int(divmod(x[1], 1)[1] * 256)), tile_ll_points))
+
+            color = ImageColor.getrgb('blue')
+            if len(tile_inter_points) > 0:
+                dr.point(tile_inter_points, fill=color)
+                # print(repr(tile_inter_points[0:100]))
+                # print(repr(tile_ll_points[0:100]))
+
             im.save(file_map[key])
 
     print('xtl:', xtl)
@@ -238,7 +317,11 @@ def main():
         else:
             im_full = get_concat_h(im_full, im_row)
 
-    im_full.save('output2.png')
+
+
+
+    im_full.save('output.png')
+    sh.open('output.png')
 
 
 if __name__ == '__main__':
