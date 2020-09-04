@@ -190,28 +190,28 @@ def main():
 
             color = ImageColor.getrgb('blue')
 
-            if xsl > lon_tile and xsl < lon_tile + 1 and ysl > lat_tile and ysl < lat_tile + 1:
+            if xsl > lon_tile and xsl < lon_tile + 1:
                 print('xsl:', xsl)
                 print('lon_tile:', lon_tile)
+                x_offset = (xsl - math.floor(xsl)) * 256
+                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
+
+            if  ysl > lat_tile and ysl < lat_tile + 1:
                 print('ysl:', ysl)
                 print('lat_tile:', lat_tile)
-
-                x_offset = (xsl - math.floor(xsl)) * 256
                 y_offset = (ysl - math.floor(ysl)) * 256
-
-                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
                 dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
-            if xsh > lon_tile and xsh < lon_tile + 1 and ysh > lat_tile and ysh < lat_tile + 1:
+            if xsh > lon_tile and xsh < lon_tile + 1:
                 print('xsh:', xsh)
                 print('lon_tile:', lon_tile)
+                x_offset = (xsh - math.floor(xsh)) * 256
+                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
+
+            if ysh > lat_tile and ysh < lat_tile + 1:
                 print('ysh:', ysh)
                 print('lat_tile:', lat_tile)
-
-                x_offset = (xsh - math.floor(xsh)) * 256
                 y_offset = (ysh - math.floor(ysh)) * 256
-
-                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
                 dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
             im.save(file_map[key])
