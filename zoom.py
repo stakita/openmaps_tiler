@@ -43,7 +43,6 @@ def ydeg2scaled(lat_deg, zoom):
     return yfloat
 
 
-
 def xdeg2num(lon_deg, zoom):
     # n = 2.0 ** zoom
     # xfloat = (lon_deg + 180.0) / 360.0 * n
@@ -83,6 +82,31 @@ def get_concat_v(im1, im2):
     dst.paste(im2, (0, im1.height))
     return dst
 
+
+def find_best_zoom(xl, xh, yl, yh, xtiles, ytiles, zoom_max=19):
+    print('xl: %f, xh: %f, yl: %f, yh: %f, xtiles: %f, ytiles: %f, zoom_max: %f' % (xl, xh, yl, yh, xtiles, ytiles, zoom_max))
+    # loop until either x or y has sufficient tile coverage
+    for zoom in range(zoom_max + 1):
+        print('zoom:', zoom)
+        xsl = xdeg2scaled(xl, zoom) # x scaled lo
+        xsh = xdeg2scaled(xh, zoom) # x scaled hi
+        ysl = ydeg2scaled(yl, zoom) # y scaled lo
+        ysh = ydeg2scaled(yh, zoom) # y scaled hi
+
+        print('xsl:', xsl)
+        print('xsh:', xsh)
+        print('ysl:', ysl)
+        print('ysh:', ysh)
+
+        if (ysh - ysl) > ytiles:
+            print('find_best_zoom: y max')
+            return zoom
+        if (xsh - xsl) > xtiles:
+            print('find_best_zoom: x max')
+            return zoom
+    return zoom_max
+
+
 def main():
     x1 = -122.1143822
     y1 = 37.4566362
@@ -90,23 +114,71 @@ def main():
     x2 = -122.1108545
     y2 = 37.4528755
 
-    x_lo_deg = min(x1, x2)
-    x_hi_deg = max(x1, x2)
-    y_lo_deg = min(y1, y2)
-    y_hi_deg = max(y1, y2)
+    xil = min(x1, x2) # x input lo
+    xih = max(x1, x2) # x input hi
+    yil = min(y1, y2) # y input lo
+    yih = max(y1, y2) # y input hi
+    xis = xih - xil # x input span
+    yis = yih - yil # x input span
 
     border_factor = 1.2
-    x_tiles = 5.5
-    y_tiles = 3.5
+    x_tiles = 3
+    y_tiles = 1
     # x_tiles = 1
     # y_tiles = 1
     zoom_max = 19
 
+    print('xil:', xil)
+    print('xih:', xih)
+    print('yil:', yil)
+    print('yih:', yih)
+    print('xis:', xis)
+    print('yis:', yis)
 
-    print('x1:', x1)
-    print('y1:', y1)
-    print('x2:', x2)
-    print('y2:', y2)
+    zoom_factor = find_best_zoom(xil, xih, yih, yil, x_tiles, y_tiles)
+    print('zoom_factor:', zoom_factor)
+
+    # desired_aspect_ratio = 1408 / 872
+    # aspect_ratio = xis / yis
+    # print('desired_aspect_ratio:', desired_aspect_ratio)
+    # print('aspect_ratio:', aspect_ratio)
+
+    # if aspect_ratio < desired_aspect_ratio:
+    #     print('fix x')
+    #     new_x_span = xis * desired_aspect_ratio / aspect_ratio
+    #     print('new_x_span:', new_x_span)
+    #     x_mid = (xih + xil) / 2
+    #     print('x_mid:', x_mid)
+    #     xel = x_mid - (new_x_span / 2) # x extent lo
+    #     xeh = x_mid + (new_x_span / 2) # x extent hi
+    #     yel = yil                      # y extent lo
+    #     yeh = yih                      # y extent hi
+    # else:
+    #     print('fix y')
+    #     new_y_span = yis * aspect_ratio / desired_aspect_ratio
+    #     print('new_y_span:', new_y_span)
+    #     y_mid = (yih + yil) / 2
+    #     print('y_mid:', y_mid)
+    #     yel = y_mid - (new_y_span / 2) # y extent lo
+    #     yeh = y_mid + (new_y_span / 2) # y extent hi
+    #     xel = xil                      # x extent lo
+    #     xeh = xih                      # x extent hi
+
+    # print('yel:', yel)
+    # print('yeh:', yeh)
+    # print('xel:', xel)
+    # print('xeh:', xeh)
+
+    # xes = xeh - xel # x extent span
+    # yes = yeh - yel # x extent span
+
+    # extent_aspect_ratio = xes / yes
+    # print('extent_aspect_ratio:', extent_aspect_ratio)
+
+    x1 = xil
+    y1 = yil
+    x2 = xih
+    y2 = yih
 
     print('-' * 80)
 
@@ -152,10 +224,10 @@ def main():
     zoom_factor = min(x_zoom_factor, y_zoom_factor)
     print('zoom_factor', zoom_factor)
 
-    x_lo_scaled = xdeg2scaled(x_lo_deg, zoom_factor)
-    x_hi_scaled = xdeg2scaled(x_hi_deg, zoom_factor)
-    y_lo_scaled = ydeg2scaled(y_lo_deg, zoom_factor)
-    y_hi_scaled = ydeg2scaled(y_hi_deg, zoom_factor)
+    x_lo_scaled = xdeg2scaled(xil, zoom_factor)
+    x_hi_scaled = xdeg2scaled(xih, zoom_factor)
+    y_lo_scaled = ydeg2scaled(yil, zoom_factor)
+    y_hi_scaled = ydeg2scaled(yih, zoom_factor)
 
     x1_tile = xdeg2num(x1, zoom_factor)
     x2_tile = xdeg2num(x2, zoom_factor)
