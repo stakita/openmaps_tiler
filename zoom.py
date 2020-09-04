@@ -122,7 +122,7 @@ def main():
     yis = yih - yil # x input span
 
     border_factor = 1.2
-    x_tiles = 3
+    x_tiles = 2
     y_tiles = 1
     # x_tiles = 1
     # y_tiles = 1
@@ -138,123 +138,31 @@ def main():
     zoom_factor = find_best_zoom(xil, xih, yih, yil, x_tiles, y_tiles)
     print('zoom_factor:', zoom_factor)
 
-    # desired_aspect_ratio = 1408 / 872
-    # aspect_ratio = xis / yis
-    # print('desired_aspect_ratio:', desired_aspect_ratio)
-    # print('aspect_ratio:', aspect_ratio)
-
-    # if aspect_ratio < desired_aspect_ratio:
-    #     print('fix x')
-    #     new_x_span = xis * desired_aspect_ratio / aspect_ratio
-    #     print('new_x_span:', new_x_span)
-    #     x_mid = (xih + xil) / 2
-    #     print('x_mid:', x_mid)
-    #     xel = x_mid - (new_x_span / 2) # x extent lo
-    #     xeh = x_mid + (new_x_span / 2) # x extent hi
-    #     yel = yil                      # y extent lo
-    #     yeh = yih                      # y extent hi
-    # else:
-    #     print('fix y')
-    #     new_y_span = yis * aspect_ratio / desired_aspect_ratio
-    #     print('new_y_span:', new_y_span)
-    #     y_mid = (yih + yil) / 2
-    #     print('y_mid:', y_mid)
-    #     yel = y_mid - (new_y_span / 2) # y extent lo
-    #     yeh = y_mid + (new_y_span / 2) # y extent hi
-    #     xel = xil                      # x extent lo
-    #     xeh = xih                      # x extent hi
-
-    # print('yel:', yel)
-    # print('yeh:', yeh)
-    # print('xel:', xel)
-    # print('xeh:', xeh)
-
-    # xes = xeh - xel # x extent span
-    # yes = yeh - yel # x extent span
-
-    # extent_aspect_ratio = xes / yes
-    # print('extent_aspect_ratio:', extent_aspect_ratio)
-
     x1 = xil
     y1 = yil
     x2 = xih
     y2 = yih
 
-    print('-' * 80)
+    # The mapping can invert the magnitude of the numbers
+    xsl = min(xdeg2scaled(xih, zoom_factor), xdeg2scaled(xil, zoom_factor))     # x scaled lo
+    xsh = max(xdeg2scaled(xih, zoom_factor), xdeg2scaled(xil, zoom_factor))     # x scaled hi
+    ysl = min(ydeg2scaled(yih, zoom_factor), ydeg2scaled(yil, zoom_factor))     # y scaled lo
+    ysh = max(ydeg2scaled(yih, zoom_factor), ydeg2scaled(yil, zoom_factor))     # y scaled hi
 
+    print('xsh:', xsh)
+    print('xsl:', xsl)
+    print('ysh:', ysh)
+    print('ysl:', ysl)
 
-    x_angle_diff = abs(abs(x1) - abs(x2))
-
-    x_zoom_angle = (x_angle_diff * border_factor) / x_tiles
-    print(x_zoom_angle)
-    x_zoom_factor = zoom_factor_bounded(x_zoom_angle, zoom_max)
-    print(x_zoom_factor)
-    print('x_zoom_factor:', x_zoom_factor)
-
-    x_tile_angle = zoom_tile_angle(x_zoom_factor)
-    print('x_tile_angle:', x_tile_angle)
-
-    print('x_angle_diff:', x_angle_diff)
-    x_tiles = math.ceil(x_angle_diff / x_tile_angle)
-
-    print('x_tiles:', x_tiles)
-
-
-    print('-' * 80)
-
-    y_angle_diff = abs(abs(y1) - abs(y2))
-
-    y_zoom_angle = (abs(abs(y1) - abs(y2)) * border_factor) / y_tiles
-    print(y_zoom_angle)
-    y_zoom_factor = zoom_factor_bounded(y_zoom_angle, zoom_max)
-    print(y_zoom_factor)
-    print('zoom_factor:', y_zoom_factor)
-
-    y_tile_angle = zoom_tile_angle(y_zoom_factor)
-    print('y_tile_angle:', y_tile_angle)
-
-    print('y_angle_diff:', y_angle_diff)
-    y_tiles = math.ceil(y_angle_diff / y_tile_angle)
-
-    print('y_tiles:', y_tiles)
-
-
-    print('=' * 80)
-
-    zoom_factor = min(x_zoom_factor, y_zoom_factor)
-    print('zoom_factor', zoom_factor)
-
-    x_lo_scaled = xdeg2scaled(xil, zoom_factor)
-    x_hi_scaled = xdeg2scaled(xih, zoom_factor)
-    y_lo_scaled = ydeg2scaled(yil, zoom_factor)
-    y_hi_scaled = ydeg2scaled(yih, zoom_factor)
-
-    x1_tile = xdeg2num(x1, zoom_factor)
-    x2_tile = xdeg2num(x2, zoom_factor)
-    print('x1_tile:', x1_tile)
-    print('x2_tile:', x2_tile)
-
-    x_hi = max(x1_tile, x2_tile)
-    x_lo = min(x1_tile, x2_tile)
-
-    print('x_hi:', x_hi)
-    print('x_lo:', x_lo)
-
-    y1_tile = ydeg2num(y1, zoom_factor)
-    y2_tile = ydeg2num(y2, zoom_factor)
-    print('y1_tile:', y1_tile)
-    print('y2_tile:', y2_tile)
-
-    y_hi = max(y1_tile, y2_tile)
-    y_lo = min(y1_tile, y2_tile)
-
-    print('y_hi:', y_hi)
-    print('y_lo:', y_lo)
+    xtl = int(xsl)     # x tile lo
+    xth = int(xsh)     # x tile hi
+    ytl = int(ysl)     # y tile lo
+    yth = int(ysh)     # y tile hi
 
     file_map = {}
 
-    for lon_tile in range(x_lo, x_hi + 1):
-        for lat_tile in range(y_lo, y_hi + 1):
+    for lon_tile in range(xtl, xth + 1):
+        for lat_tile in range(ytl, yth + 1):
             key = (lon_tile, lat_tile)
             print(lon_tile, lat_tile)
             output_filename = 'tile_%06d_%06d_%02d.png' % (lon_tile, lat_tile, zoom_factor)
@@ -263,8 +171,8 @@ def main():
 
     print(file_map)
 
-    for lon_tile in range(x_lo, x_hi + 1):
-        for lat_tile in range(y_lo, y_hi + 1):
+    for lon_tile in range(xtl, xth + 1):
+        for lat_tile in range(ytl, yth + 1):
             key = (lon_tile, lat_tile)
             print(lon_tile, lat_tile)
             im = Image.open(file_map[key]).convert('RGB')
@@ -282,40 +190,41 @@ def main():
 
             color = ImageColor.getrgb('blue')
 
-            print('x_lo_scaled:', x_lo_scaled)
-            print('lon_tile:', lon_tile)
-            print('y_lo_scaled:', y_lo_scaled)
-            print('lat_tile:', lat_tile)
+            if xsl > lon_tile and xsl < lon_tile + 1 and ysl > lat_tile and ysl < lat_tile + 1:
+                print('xsl:', xsl)
+                print('lon_tile:', lon_tile)
+                print('ysl:', ysl)
+                print('lat_tile:', lat_tile)
 
-            if x_lo_scaled > lon_tile and x_lo_scaled < lon_tile + 1 and y_lo_scaled > lat_tile and y_lo_scaled < lat_tile + 1:
-                x_offset = (x_lo_scaled - math.floor(x_lo_scaled)) * 256
-                y_offset = (y_lo_scaled - math.floor(y_lo_scaled)) * 256
-
-                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
-                dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
-
-            if x_hi_scaled > lon_tile and x_hi_scaled < lon_tile + 1 and y_hi_scaled > lat_tile and y_hi_scaled < lat_tile + 1:
-                x_offset = (x_hi_scaled - math.floor(x_hi_scaled)) * 256
-                y_offset = (y_hi_scaled - math.floor(y_hi_scaled)) * 256
+                x_offset = (xsl - math.floor(xsl)) * 256
+                y_offset = (ysl - math.floor(ysl)) * 256
 
                 dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
                 dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
-    # x_hi_scaled = xdeg2scaled(x_hi_deg)
-    # y_lo_scaled = ydeg2scaled(y_lo_deg)
-    # y_hi_scaled = ydeg2scaled(y_hi_deg)
+            if xsh > lon_tile and xsh < lon_tile + 1 and ysh > lat_tile and ysh < lat_tile + 1:
+                print('xsh:', xsh)
+                print('lon_tile:', lon_tile)
+                print('ysh:', ysh)
+                print('lat_tile:', lat_tile)
 
-            # color = ImageColor.getrgb('red')
-            # dr.line([(0, 0), (0, 255)], fill=color, width=1)
-            # dr.line([(0, 0), (255, 0)], fill=color, width=1)
+                x_offset = (xsh - math.floor(xsh)) * 256
+                y_offset = (ysh - math.floor(ysh)) * 256
+
+                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
+                dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
             im.save(file_map[key])
 
+    print('xtl:', xtl)
+    print('xth:', xth)
+    print('ytl:', ytl)
+    print('yth:', yth)
 
     im_full = None
-    for lon_tile in range(x_lo, x_hi + 1):
+    for lon_tile in range(xtl, xth + 1):
         im_row = None
-        for lat_tile in range(y_lo, y_hi + 1):
+        for lat_tile in range(ytl, yth + 1):
             key = (lon_tile, lat_tile)
             print(lon_tile, lat_tile)
             if im_row is None:
