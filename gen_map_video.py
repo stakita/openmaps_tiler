@@ -3,8 +3,8 @@
 Generate map video.
 
 Usage:
-  gen_waveform_slider.py <background_image> <points_json> [--output=<OUTPUT_FILE>] [--fps=<FPS>] [--tstart=<TIME>] [--tfinish=<TIME>]
-  gen_waveform_slider.py (-h | --help)
+  gen_map_video.py <background_image> <points_json> [--output=<OUTPUT_FILE>] [--fps=<FPS>] [--tstart=<TIME>] [--tfinish=<TIME>]
+  gen_map_video.py (-h | --help)
 
 Options:
   -h --help                 Show this screen.
