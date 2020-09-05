@@ -149,7 +149,8 @@ def get_mapped_points_array(points_list, zoom):
     for point in points_list:
         y = ydeg2scaled(point['lat'], zoom)
         x = xdeg2scaled(point['lon'], zoom)
-        mapped_points.append((x, y))
+        ts = point['time']
+        mapped_points.append((x, y, ts))
     return mapped_points
 
 def in_tile_fn(xtile, ytile):
@@ -159,9 +160,25 @@ def in_tile_fn(xtile, ytile):
             return True
     return in_tile
 
+
+def mapped_to_pixel_points(mapped_points, x_base, y_base, with_ts=False):
+    # x_base, y_base is coordinates of the base tile in tile map indexes
+    image_points = []
+    for x, y, ts in mapped_points:
+        x_pix = int((x - x_base) * 256)
+        y_pix = int((y - y_base) * 256)
+        if with_ts:
+            point = (x_pix, y_pix, ts)
+        else:
+            point = (x_pix, y_pix)
+        image_points.append(point)
+    return image_points
+
+
 def main():
 
-    points_filename = 'output.json'
+    tile_directory = 'tiles'
+    points_filename = 'input.json'
     points = load_points_file(points_filename)
 
     print(points[0])
@@ -232,9 +249,9 @@ def main():
         for lat_tile in range(ytl, yth + 1):
             key = (lon_tile, lat_tile)
             print(lon_tile, lat_tile)
-            output_filename = 'tile_%06d_%06d_%02d.png' % (lon_tile, lat_tile, zoom_factor)
+            output_filename = tile_directory +'/' +'tile_%06d_%06d_%02d.png' % (lon_tile, lat_tile, zoom_factor)
             file_map[key] = output_filename
-            tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
+            # tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
 
     print(file_map)
 
@@ -283,15 +300,13 @@ def main():
                 y_offset = (ysh - math.floor(ysh)) * 256
                 dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
-            in_tile = in_tile_fn(lon_tile, lat_tile)
-            tile_ll_points = list(filter(in_tile, mapped_points))
-            tile_inter_points = list(map(lambda x: (int(divmod(x[0], 1)[1] * 256), int(divmod(x[1], 1)[1] * 256)), tile_ll_points))
+            # in_tile = in_tile_fn(lon_tile, lat_tile)
+            # tile_ll_points = list(filter(in_tile, mapped_points))
+            # tile_inter_points = list(map(lambda x: (int(divmod(x[0], 1)[1] * 256), int(divmod(x[1], 1)[1] * 256)), tile_ll_points))
 
-            color = ImageColor.getrgb('blue')
-            if len(tile_inter_points) > 0:
-                dr.point(tile_inter_points, fill=color)
-                # print(repr(tile_inter_points[0:100]))
-                # print(repr(tile_ll_points[0:100]))
+            # color = ImageColor.getrgb('blue')
+            # if len(tile_inter_points) > 0:
+            #     dr.point(tile_inter_points, fill=color)
 
             im.save(file_map[key])
 
@@ -317,10 +332,23 @@ def main():
         else:
             im_full = get_concat_h(im_full, im_row)
 
+    in_tile = in_tile_fn(lon_tile, lat_tile)
+    pixel_points = mapped_to_pixel_points(mapped_points, xtl, ytl)
+    pixel_points_ts = mapped_to_pixel_points(mapped_points, xtl, ytl, with_ts=True)
 
+    color = ImageColor.getrgb('blue')
 
+    dr = ImageDraw.Draw(im_full)
+    dr.point(pixel_points, fill=color)
 
     im_full.save('output.png')
+
+
+    # dump pixel points
+    with open('output.json', 'w+') as fd:
+        fd.write(json.dumps(pixel_points_ts))
+
+
     sh.open('output.png')
 
 
