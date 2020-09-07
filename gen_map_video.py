@@ -9,7 +9,7 @@ Usage:
 Options:
   -h --help                 Show this screen.
   --output=<OUTPUT_FILE>    Output file name [default: map.avi]
-  --fps=<FPS>               Override frames per second [default: 24]
+  --fps=<FPS>               Override frames per second [default: 25]
 '''
 import sys
 import numpy as np
@@ -35,8 +35,8 @@ except ImportError as e:
 def load_points_file(filename):
     with open(filename) as fd:
         body = fd.read()
-    points_data = json.loads(body)
-    return points_data
+    gps_data = json.loads(body)
+    return gps_data['gps_points'], gps_data['start_time']
 
 
 def get_start_time(points):
@@ -60,9 +60,9 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
     height, width, _ = image.shape
     print(height, width)
 
-    points = load_points_file(points_json_file)
+    points, start_time_string = load_points_file(points_json_file)
 
-    start_time = get_start_time(points)
+    start_time = get_timestamp(start_time_string)
     finish_time =  get_finish_time(points)
 
     print(start_time)
@@ -111,10 +111,10 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
         update_period = 1000
         if frame % update_period == 0:
             frame_total = frame + 1
-            # print('%3.2f %d %d' % (frame / 24, frame, frames))
-            print('%3.2f %d %d  a1 = %f, a2 = %f, a3 = %f, a4 = %f, a5 = %f' % (frame / 24, frame, frames, s1 / frame_total, s2 / frame_total, s3 / frame_total, s4 / frame_total, s5 / frame_total))
+            # print('%3.2f %d %d' % (frame / fps, frame, frames))
+            print('%3.2f %d %d  a1 = %f, a2 = %f, a3 = %f, a4 = %f, a5 = %f' % (frame / fps, frame, frames, s1 / frame_total, s2 / frame_total, s3 / frame_total, s4 / frame_total, s5 / frame_total))
 
-        current_time = frame / 24.0
+        current_time = frame / fps
 
         t1 = time.time()
 
