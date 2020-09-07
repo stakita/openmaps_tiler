@@ -1,7 +1,20 @@
+#!/usr/bin/env python3
+'''
+zoom.py - Aggregate tile downloader and annotator
+
+Usage:
+  zoom.py <gps-metadata> [--output=<filename>] [--zoom=<factor>]
+
+Options:
+  -h --help             Show this screen.
+  --output=<filename>   Output filename [default: output.png].
+  --zoom=<factor>       Override zoom factor.
+'''
 import math
 import tile_dl
 import json
 import sh
+import sys
 
 try:
     from PIL import Image
@@ -10,6 +23,11 @@ except ImportError as e:
     sys.stderr.write('Error: %s\nTry:\n    pip install --user Pillow\n' % e)
     sys.exit(1)
 
+try:
+    from docopt import docopt
+except ImportError as e:
+    sys.stderr.write('Error: %s\nTry:\n    pip install --user docopt\n' % e)
+    sys.exit(1)
 
 def zoom_tile_angle(zoom):
     print('zoom_tile_angle:', zoom)
@@ -84,29 +102,36 @@ def get_concat_v(im1, im2):
     dst.paste(im2, (0, im1.height))
     return dst
 
-
-def find_best_zoom(xl, xh, yl, yh, xtiles, ytiles, zoom_max=19):
-    print('xl: %f, xh: %f, yl: %f, yh: %f, xtiles: %f, ytiles: %f, zoom_max: %f' % (xl, xh, yl, yh, xtiles, ytiles, zoom_max))
-    # loop until either x or y has sufficient tile coverage
+def find_best_zoom(xl, xh, yl, yh, xtiles, ytiles, target_square_size, zoom_max=19):
+    print('find_best_zoom - xl: %f, xh: %f, yl: %f, yh: %f, xtiles: %f, ytiles: %f, zoom_max: %f' % (xl, xh, yl, yh, xtiles, ytiles, zoom_max))
+    # loop until either x or y has exceeded zoom for gien tile_square_size - take previous zoom
     for zoom in range(zoom_max + 1):
-        print('zoom:', zoom)
-        xsl = xdeg2scaled(xl, zoom) # x scaled lo
-        xsh = xdeg2scaled(xh, zoom) # x scaled hi
-        ysl = ydeg2scaled(yl, zoom) # y scaled lo
-        ysh = ydeg2scaled(yh, zoom) # y scaled hi
+        # print('zoom:', zoom)
+        # xbsl = xdeg2scaled(xl, zoom) # x scaled lo
+        # xbsh = xdeg2scaled(xh, zoom) #a x scaled hi
+        # ybsl = ydeg2scaled(yl, zoom) # y scaled lo
+        # ybsh = ydeg2scaled(yh, zoom) # y scaled hi
 
-        print('xsl:', xsl)
-        print('xsh:', xsh)
-        print('ysl:', ysl)
-        print('ysh:', ysh)
+        # print('xbsl:', xbsl)
+        # print('xbsh:', xbsh)
+        # print('ybsl:', ybsl)
+        # print('ybsh:', ybsh)
 
-        if (ysh - ysl) > ytiles:
-            print('find_best_zoom: y max')
-            return zoom
-        if (xsh - xsl) > xtiles:
-            print('find_best_zoom: x max')
-            return zoom
-    return zoom_max
+        # if (ybsh - ybsl) > ytiles:
+        #     print('find_best_zoom: y max')
+        #     return zoom
+        # if (xbsh - xbsl) > xtiles:
+        #     print('find_best_zoom: x max')
+        #     return zoom
+
+        x_scaled = abs(xdeg2scaled(xl, zoom)*256 - xdeg2scaled(xh, zoom)*256)
+        y_scaled = abs(ydeg2scaled(yl, zoom)*256 - ydeg2scaled(yh, zoom)*256)
+        if x_scaled >= target_square_size or y_scaled >= target_square_size:
+            break
+    zoom_target = zoom - 1 # last zoom value
+    print('--> zoom_target: %d' % (zoom_target))
+
+    return zoom_target
 
 def load_points_file(filename):
     with open(filename) as fd:
@@ -137,12 +162,28 @@ def get_boundary_extents(points_list):
 
     return xl, xh, yl, yh
 
+
+def get_expanded_boundary_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size):
+    y_pixel_width = abs(ydeg2scaled(yil, zoom_factor)*256 - ydeg2scaled(yih, zoom_factor)*256)
+    x_pixel_width = abs(xdeg2scaled(xil, zoom_factor)*256 - xdeg2scaled(xih, zoom_factor)*256)
+
+    x_scaling = target_square_size / x_pixel_width
+    y_scaling = target_square_size / y_pixel_width
+
+    yol = yindex2lat(((ydeg2scaled(yil, zoom_factor) * 256 * y_scaling) + boundary_pixels) / (256 * y_scaling), zoom_factor)
+    yoh = yindex2lat(((ydeg2scaled(yih, zoom_factor) * 256 * y_scaling) - boundary_pixels) / (256 * y_scaling), zoom_factor)
+    xol = xindex2lon(((xdeg2scaled(xil, zoom_factor) * 256 * x_scaling) - boundary_pixels) / (256 * x_scaling), zoom_factor)
+    xoh = xindex2lon(((xdeg2scaled(xih, zoom_factor) * 256 * x_scaling) + boundary_pixels) / (256 * x_scaling), zoom_factor)
+    return xol, xoh, yol, yoh
+
+
 def get_ll_points_array(points_list):
     raw_points = []
     for point in points_list:
         y = point['lat']
         x = point['lon']
         raw_points.append((x, y))
+
 
 def get_mapped_points_array(points_list, zoom):
     mapped_points = []
@@ -152,6 +193,7 @@ def get_mapped_points_array(points_list, zoom):
         ts = point['time']
         mapped_points.append((x, y, ts))
     return mapped_points
+
 
 def in_tile_fn(xtile, ytile):
     def in_tile(point):
@@ -175,31 +217,27 @@ def mapped_to_pixel_points(mapped_points, x_base, y_base, with_ts=False):
     return image_points
 
 
-def main():
+def main(args):
+
+    gps_metadata_filename = args['<gps-metadata>']
+    output_file = args['--output']
+    output_metadata_file = output_file + '.meta.txt'
+    zoom_override = args['--zoom']
 
     tile_directory = 'tiles'
-    points_filename = 'input.json'
-    points = load_points_file(points_filename)
+    points = load_points_file(gps_metadata_filename)
 
+    first_point = points.pop(0)
+    start_time = first_point['time']
     print(points[0])
-    xil, xih, yil, yih = get_boundary_extents(points)
 
-    print(xil, xih, yil, yih)
+    xil, xih, yil, yih = (-122.1399074, -122.0867842, 37.4446023, 37.4941312)
+    # xil, xih, yil, yih = get_boundary_extents(points)
+
+    print('boundary extents:', xil, xih, yil, yih)
 
 
 
-    # return
-
-    # x1 = -122.1143822
-    # y1 = 37.4566362
-
-    # x2 = -122.1108545
-    # y2 = 37.4528755
-
-    # xil = min(x1, x2) # x input lo
-    # xih = max(x1, x2) # x input hi
-    # yil = min(y1, y2) # y input lo
-    # yih = max(y1, y2) # y input hi
     xis = xih - xil # x input span
     yis = yih - yil # x input span
 
@@ -209,6 +247,8 @@ def main():
     # x_tiles = 1
     # y_tiles = 1
     zoom_max = 19
+    boundary_pixels = 20
+    target_square_size = 982
 
     print('xil:', xil)
     print('xih:', xih)
@@ -217,29 +257,41 @@ def main():
     print('xis:', xis)
     print('yis:', yis)
 
-    zoom_factor = find_best_zoom(xil, xih, yih, yil, x_tiles, y_tiles)
+    if zoom_override is None:
+        zoom_factor = find_best_zoom(xil, xih, yih, yil, x_tiles, y_tiles, target_square_size)
+    else:
+        zoom_factor = int(zoom_override)
     print('zoom_factor:', zoom_factor)
 
-    x1 = xil
-    y1 = yil
-    x2 = xih
-    y2 = yih
+    xbl, xbh, ybl, ybh = get_expanded_boundary_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size)
+    print('expanded boundary extents:', xbl, xbh, ybl, ybh)
 
-    # The mapping can invert the magnitude of the numbers
-    xsl = min(xdeg2scaled(xih, zoom_factor), xdeg2scaled(xil, zoom_factor))     # x scaled lo
-    xsh = max(xdeg2scaled(xih, zoom_factor), xdeg2scaled(xil, zoom_factor))     # x scaled hi
-    ysl = min(ydeg2scaled(yih, zoom_factor), ydeg2scaled(yil, zoom_factor))     # y scaled lo
-    ysh = max(ydeg2scaled(yih, zoom_factor), ydeg2scaled(yil, zoom_factor))     # y scaled hi
+    # x1 = xil
+    # y1 = yil
+    # x2 = xih
+    # y2 = yih
 
-    print('xsh:', xsh)
-    print('xsl:', xsl)
-    print('ysh:', ysh)
-    print('ysl:', ysl)
+    # Get the extent mapping of the track extents in scaled map factors
+    xesl = min(xdeg2scaled(xih, zoom_factor), xdeg2scaled(xil, zoom_factor))     # x boundary scaled lo
+    xesh = max(xdeg2scaled(xih, zoom_factor), xdeg2scaled(xil, zoom_factor))     # x boundary scaled hi
+    yesl = min(ydeg2scaled(yih, zoom_factor), ydeg2scaled(yil, zoom_factor))     # y boundary scaled lo
+    yesh = max(ydeg2scaled(yih, zoom_factor), ydeg2scaled(yil, zoom_factor))     # y boundary scaled hi
 
-    xtl = int(xsl)     # x tile lo
-    xth = int(xsh)     # x tile hi
-    ytl = int(ysl)     # y tile lo
-    yth = int(ysh)     # y tile hi
+    # Get the boundary mapping of the boundary extents in scaled map factors
+    xbsl = min(xdeg2scaled(xbh, zoom_factor), xdeg2scaled(xbl, zoom_factor))     # x boundary scaled lo
+    xbsh = max(xdeg2scaled(xbh, zoom_factor), xdeg2scaled(xbl, zoom_factor))     # x boundary scaled hi
+    ybsl = min(ydeg2scaled(ybh, zoom_factor), ydeg2scaled(ybl, zoom_factor))     # y boundary scaled lo
+    ybsh = max(ydeg2scaled(ybh, zoom_factor), ydeg2scaled(ybl, zoom_factor))     # y boundary scaled hi
+
+    print('xbsh:', xbsh)
+    print('xbsl:', xbsl)
+    print('ybsh:', ybsh)
+    print('ybsl:', ybsl)
+
+    xtl = int(xbsl)     # x tile lo
+    xth = int(xbsh)     # x tile hi
+    ytl = int(ybsl)     # y tile lo
+    yth = int(ybsh)     # y tile hi
 
     mapped_points = get_mapped_points_array(points, zoom_factor)
 
@@ -251,7 +303,7 @@ def main():
             print(lon_tile, lat_tile)
             output_filename = tile_directory +'/' +'tile_%06d_%06d_%02d.png' % (lon_tile, lat_tile, zoom_factor)
             file_map[key] = output_filename
-            # tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
+            tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
 
     print(file_map)
 
@@ -263,41 +315,67 @@ def main():
             dr = ImageDraw.Draw(im)
 
             # grid lines
-            # color = ImageColor.getrgb('red')
-            # dr.line([(0, 0), (0, 255)], fill=color, width=1)
-            # dr.line([(0, 0), (255, 0)], fill=color, width=1)
-            # font = ImageFont.load_default()
-            # lon_deg_min = xindex2lon(lon_tile, zoom_factor)
-            # lat_deg_min = yindex2lat(lat_tile, zoom_factor)
-            # lon_deg_max = xindex2lon(lon_tile + 1, zoom_factor)
-            # lat_deg_max = yindex2lat(lat_tile + 1, zoom_factor)
-            # dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
-            # dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
+            color = ImageColor.getrgb('brown')
+            dr.line([(0, 0), (0, 255)], fill=color, width=1)
+            dr.line([(0, 0), (255, 0)], fill=color, width=1)
+            font = ImageFont.load_default()
+            lon_deg_min = xindex2lon(lon_tile, zoom_factor)
+            lat_deg_min = yindex2lat(lat_tile, zoom_factor)
+            lon_deg_max = xindex2lon(lon_tile + 1, zoom_factor)
+            lat_deg_max = yindex2lat(lat_tile + 1, zoom_factor)
+            dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
+            dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
 
             color = ImageColor.getrgb('black')
 
-            if xsl > lon_tile and xsl < lon_tile + 1:
-                print('xsl:', xsl)
+            if xbsl > lon_tile and xbsl < lon_tile + 1:
+                print('xbsl:', xbsl)
                 print('lon_tile:', lon_tile)
-                x_offset = (xsl - math.floor(xsl)) * 256
+                x_offset = (xbsl - math.floor(xbsl)) * 256
                 dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
 
-            if  ysl > lat_tile and ysl < lat_tile + 1:
-                print('ysl:', ysl)
+            if  ybsl > lat_tile and ybsl < lat_tile + 1:
+                print('ybsl:', ybsl)
                 print('lat_tile:', lat_tile)
-                y_offset = (ysl - math.floor(ysl)) * 256
+                y_offset = (ybsl - math.floor(ybsl)) * 256
                 dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
-            if xsh > lon_tile and xsh < lon_tile + 1:
-                print('xsh:', xsh)
+            if xbsh > lon_tile and xbsh < lon_tile + 1:
+                print('xbsh:', xbsh)
                 print('lon_tile:', lon_tile)
-                x_offset = (xsh - math.floor(xsh)) * 256
+                x_offset = (xbsh - math.floor(xbsh)) * 256
                 dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
 
-            if ysh > lat_tile and ysh < lat_tile + 1:
-                print('ysh:', ysh)
+            if ybsh > lat_tile and ybsh < lat_tile + 1:
+                print('ybsh:', ybsh)
                 print('lat_tile:', lat_tile)
-                y_offset = (ysh - math.floor(ysh)) * 256
+                y_offset = (ybsh - math.floor(ybsh)) * 256
+                dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
+
+            color = ImageColor.getrgb('red')
+
+            if xesl > lon_tile and xesl < lon_tile + 1:
+                print('xesl:', xesl)
+                print('lon_tile:', lon_tile)
+                x_offset = (xesl - math.floor(xesl)) * 256
+                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
+
+            if  yesl > lat_tile and yesl < lat_tile + 1:
+                print('yesl:', yesl)
+                print('lat_tile:', lat_tile)
+                y_offset = (yesl - math.floor(yesl)) * 256
+                dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
+
+            if xesh > lon_tile and xesh < lon_tile + 1:
+                print('xesh:', xesh)
+                print('lon_tile:', lon_tile)
+                x_offset = (xesh - math.floor(xesh)) * 256
+                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
+
+            if yesh > lat_tile and yesh < lat_tile + 1:
+                print('yesh:', yesh)
+                print('lat_tile:', lat_tile)
+                y_offset = (yesh - math.floor(yesh)) * 256
                 dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
             # in_tile = in_tile_fn(lon_tile, lat_tile)
@@ -341,16 +419,22 @@ def main():
     dr = ImageDraw.Draw(im_full)
     dr.point(pixel_points, fill=color)
 
-    im_full.save('output.png')
+    im_full.save(output_file)
 
+    gps_metadata = {
+        'start_time': start_time,
+        'gps_points': pixel_points_ts
+    }
 
     # dump pixel points
-    with open('output.json', 'w+') as fd:
-        fd.write(json.dumps(pixel_points_ts))
+    with open(output_metadata_file, 'w+') as fd:
+        fd.write(json.dumps(gps_metadata))
 
-
-    sh.open('output.png')
+    sh.open(output_file)
 
 
 if __name__ == '__main__':
-    main()
+    arguments = docopt(__doc__)
+    sys.exit(main(arguments))
+
+
