@@ -129,7 +129,6 @@ def main(args):
 
 
 if __name__ == '__main__':
-    # get_zll(float(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]))
     arguments = docopt(__doc__)
     sys.exit(main(arguments))
 
