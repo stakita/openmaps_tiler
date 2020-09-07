@@ -54,8 +54,8 @@ class ConversionException(Exception):
 # Geo to tile scale conversions
 
 def xgeo2tile(lon_deg, zoom):
-    if lat_deg > -180 or lat_deg < 180:
-        raise ConversionException('Degres beyond conversion range: %f' % lat_deg)
+    if lon_deg > 180 or lon_deg < -180:
+        raise ConversionException('Degres beyond conversion range: %f' % lon_deg)
     n = 2.0 ** zoom
     xfloat = (lon_deg + 180.0) / 360.0 * n
 
@@ -99,7 +99,7 @@ def xpix2geo(xpix, zoom):
 
 def ypix2geo(ypix, zoom):
     ytile = ypix / 256
-    lat_deg = xtile2geo(ytile, zoom)
+    lat_deg = ytile2geo(ytile, zoom)
     return lat_deg
 
 # Tile to pixel scale conversions
@@ -149,6 +149,75 @@ def get_concat_v(im1, im2):
     dst.paste(im1, (0, 0))
     dst.paste(im2, (0, im1.height))
     return dst
+
+
+def maximize_zoom(xl, xh, yl, yh, target_square_size, zoom_max=19):
+    print('maximize_zoom - xl: %f, xh: %f, yl: %f, yh: %f, target_square_size: %d, zoom_max: %f' % (xl, xh, yl, yh, target_square_size, zoom_max))
+    # loop until either x or y has exceeded zoom for gien tile_square_size - take previous zoom
+    for zoom in range(zoom_max + 1):
+        xpl, xph, ypl, yph = geo_set_to_pixel(xl, xh, yl, yh, zoom)
+        x_size_pixel = xph - xpl
+        y_size_pixel = yph - ypl
+        if x_size_pixel >= target_square_size or y_size_pixel >= target_square_size:
+            break
+    zoom_target = zoom - 1 # last zoom value
+    print('--> zoom_target: %d' % (zoom_target))
+    xpl, xph, ypl, yph = geo_set_to_pixel(xl, xh, yl, yh, zoom_target)
+    x_size_pixel = xph - xpl
+    y_size_pixel = yph - ypl
+    print('--> xpl: %f' % (xpl))
+    print('--> xph: %f' % (xph))
+    print('--> ypl: %f' % (ypl))
+    print('--> yph: %f' % (yph))
+    print('--> x_size_pixel:  %f' % (x_size_pixel))
+    print('--> y_size_pixel:  %f' % (y_size_pixel))
+
+    return zoom_target
+
+
+def geo_set_to_pixel(xl, xh, yl, yh, zoom):
+    if xl > xh:
+        raise ConversionException('x coordinate ordering incorrect: xl=%f > xh=%f' % (xl, xh))
+    if yl > yh:
+        raise ConversionException('y coordinate ordering incorrect: yl=%f > yh=%f' % (yl, yh))
+
+    xpl = xgeo2pix(xl, zoom)
+    xph = xgeo2pix(xh, zoom)
+    # We swap these, because the y scale is magnitude inverted
+    ypl = ygeo2pix(yh, zoom)
+    yph = ygeo2pix(yl, zoom)
+
+    return xpl, xph, ypl, yph
+
+
+def get_expanded_boundary_extents(xgl, xgh, ygl, ygh, zoom_factor, boundary_pixels, target_square_size):
+    # Calculate coords for boundary extension of boundary_pixels at the scaled up size (from base zoom size)
+    xpl, xph, ypl, yph = geo_set_to_pixel(xgl, xgh, ygl, ygh, zoom_factor)
+    x_size_pixel = xph - xpl
+    y_size_pixel = yph - ypl
+
+    scale_base = max(x_size_pixel, y_size_pixel)
+    scale_factor = target_square_size / scale_base
+    print('scale_factor:', scale_factor)
+
+    print('xpl, xph, ypl, yph:', xpl, xph, ypl, yph)
+
+    xpl -= boundary_pixels / scale_factor
+    xph += boundary_pixels / scale_factor
+    ypl -= boundary_pixels / scale_factor
+    yph += boundary_pixels / scale_factor
+
+    print('xpl`, xph`, ypl`, yph`:', xpl, xph, ypl, yph)
+
+    xbl = xpix2geo(xpl, zoom_factor)
+    xbh = xpix2geo(xph, zoom_factor)
+    ybl = ypix2geo(ypl, zoom_factor)
+    ybh = ypix2geo(yph, zoom_factor)
+
+    print('xbl, xbh, ybl, ybh:', xbl, xbh, ybl, ybh)
+
+    return xbl, xbh, ybl, ybh, scale_factor
+
 
 def find_best_zoom(xl, xh, yl, yh, xtiles, ytiles, target_square_size, zoom_max=19):
     print('find_best_zoom - xl: %f, xh: %f, yl: %f, yh: %f, xtiles: %f, ytiles: %f, zoom_max: %f' % (xl, xh, yl, yh, xtiles, ytiles, zoom_max))
@@ -209,20 +278,6 @@ def get_boundary_extents(points_list):
             xh = lon
 
     return xl, xh, yl, yh
-
-
-def get_expanded_boundary_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size):
-    y_pixel_width = abs(ygeo2tile(yil, zoom_factor)*256 - ygeo2tile(yih, zoom_factor)*256)
-    x_pixel_width = abs(xgeo2tile(xil, zoom_factor)*256 - xgeo2tile(xih, zoom_factor)*256)
-
-    x_scaling = target_square_size / x_pixel_width
-    y_scaling = target_square_size / y_pixel_width
-
-    yol = ytile2geo(((ygeo2tile(yil, zoom_factor) * 256 * y_scaling) + boundary_pixels) / (256 * y_scaling), zoom_factor)
-    yoh = ytile2geo(((ygeo2tile(yih, zoom_factor) * 256 * y_scaling) - boundary_pixels) / (256 * y_scaling), zoom_factor)
-    xol = xtile2geo(((xgeo2tile(xil, zoom_factor) * 256 * x_scaling) - boundary_pixels) / (256 * x_scaling), zoom_factor)
-    xoh = xtile2geo(((xgeo2tile(xih, zoom_factor) * 256 * x_scaling) + boundary_pixels) / (256 * x_scaling), zoom_factor)
-    return xol, xoh, yol, yoh
 
 
 def get_ll_points_array(points_list):
@@ -306,12 +361,13 @@ def main(args):
     print('yis:', yis)
 
     if zoom_override is None:
-        zoom_factor = find_best_zoom(xil, xih, yih, yil, x_tiles, y_tiles, target_square_size)
+        # zoom_factor = find_best_zoom(xil, xih, yih, yil, x_tiles, y_tiles, target_square_size)
+        zoom_factor = maximize_zoom(xil, xih, yil, yih, target_square_size)
     else:
         zoom_factor = int(zoom_override)
     print('zoom_factor:', zoom_factor)
 
-    xbl, xbh, ybl, ybh = get_expanded_boundary_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size)
+    xbl, xbh, ybl, ybh, scale_factor = get_expanded_boundary_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size)
     print('expanded boundary extents:', xbl, xbh, ybl, ybh)
 
     # x1 = xil
