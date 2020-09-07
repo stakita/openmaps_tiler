@@ -48,30 +48,78 @@ def zoom_factor_bounded(in_zoom, zoom_max):
 def pixel_angle(zoom):
     return (360 / 2.0 ** zoom) / 256
 
+class ConversionException(Exception):
+    pass
+
+# Geo to tile scale conversions
 
 def xgeo2tile(lon_deg, zoom):
+    if lat_deg > -180 or lat_deg < 180:
+        raise ConversionException('Degres beyond conversion range: %f' % lat_deg)
     n = 2.0 ** zoom
     xfloat = (lon_deg + 180.0) / 360.0 * n
 
     return xfloat
 
 def ygeo2tile(lat_deg, zoom):
+    if lat_deg > 85.05113 or lat_deg < -85.05113:
+        raise ConversionException('Degres beyond conversion range: %f' % lat_deg)
     n = 2.0 ** zoom
     lat_rad = math.radians(lat_deg)
     yfloat = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
 
     return yfloat
 
-def xtile2geo(xindex, zoom):
+def xtile2geo(xtile, zoom):
     n = 2.0 ** zoom
-    lon_deg = (xindex / n * 360) - 180.0
+    lon_deg = (xtile / n * 360) - 180.0
     return lon_deg
 
 
-def ytile2geo(yindex, zoom):
+def ytile2geo(ytile, zoom):
     n = 2.0 ** zoom
-    lat_deg = math.degrees(math.atan(math.sinh((- (yindex / n * 2.0) + 1.0) * math.pi)))
+    lat_deg = math.degrees(math.atan(math.sinh((- (ytile / n * 2.0) + 1.0) * math.pi)))
     return lat_deg
+
+# Geo to pixel scale conversions
+
+def xgeo2pix(lon_deg, zoom):
+    xpixel = xgeo2tile(lon_deg, zoom) * 256
+    return xpixel
+
+def ygeo2pix(lat_deg, zoom):
+    ypixel = ygeo2tile(lat_deg, zoom) * 256
+    return ypixel
+
+def xpix2geo(xpix, zoom):
+    xtile = xpix / 256
+    lon_deg = xtile2geo(xtile, zoom)
+    return lon_deg
+
+
+def ypix2geo(ypix, zoom):
+    ytile = ypix / 256
+    lat_deg = xtile2geo(ytile, zoom)
+    return lat_deg
+
+# Tile to pixel scale conversions
+
+def xtile2pix(xtile, zoom):
+    xpixel = xtile * 256
+    return xpixel
+
+def ytile2pix(ytile, zoom):
+    ypixel = ytile * 256
+    return ypixel
+
+def xpix2tile(xpix, zoom):
+    xtile = xpix / 256
+    return xtile
+
+
+def ypix2tile(ypix, zoom):
+    ytile = ypix / 256
+    return ytile
 
 
 def xdeg2num(lon_deg, zoom):
