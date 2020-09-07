@@ -49,25 +49,36 @@ def pixel_angle(zoom):
     return (360 / 2.0 ** zoom) / 256
 
 
-def xdeg2scaled(lon_deg, zoom):
+def xgeo2tile(lon_deg, zoom):
     n = 2.0 ** zoom
     xfloat = (lon_deg + 180.0) / 360.0 * n
 
     return xfloat
 
-def ydeg2scaled(lat_deg, zoom):
+def ygeo2tile(lat_deg, zoom):
     n = 2.0 ** zoom
     lat_rad = math.radians(lat_deg)
     yfloat = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
 
     return yfloat
 
+def xtile2geo(xindex, zoom):
+    n = 2.0 ** zoom
+    lon_deg = (xindex / n * 360) - 180.0
+    return lon_deg
+
+
+def ytile2geo(yindex, zoom):
+    n = 2.0 ** zoom
+    lat_deg = math.degrees(math.atan(math.sinh((- (yindex / n * 2.0) + 1.0) * math.pi)))
+    return lat_deg
+
 
 def xdeg2num(lon_deg, zoom):
     # n = 2.0 ** zoom
     # xfloat = (lon_deg + 180.0) / 360.0 * n
     # xtile = int(xfloat)
-    return int(xdeg2scaled(lon_deg, zoom))
+    return int(xgeo2tile(lon_deg, zoom))
 
 
 def ydeg2num(lat_deg, zoom):
@@ -75,19 +86,8 @@ def ydeg2num(lat_deg, zoom):
     # lat_rad = math.radians(lat_deg)
     # yfloat = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
     # ytile = int(yfloat)
-    return int(ydeg2scaled(lat_deg, zoom))
+    return int(ygeo2tile(lat_deg, zoom))
 
-
-def xindex2lon(xindex, zoom):
-    n = 2.0 ** zoom
-    lon_deg = (xindex / n * 360) - 180.0
-    return lon_deg
-
-
-def yindex2lat(yindex, zoom):
-    n = 2.0 ** zoom
-    lat_deg = math.degrees(math.atan(math.sinh((- (yindex / n * 2.0) + 1.0) * math.pi)))
-    return lat_deg
 
 
 def get_concat_h(im1, im2):
@@ -107,10 +107,10 @@ def find_best_zoom(xl, xh, yl, yh, xtiles, ytiles, target_square_size, zoom_max=
     # loop until either x or y has exceeded zoom for gien tile_square_size - take previous zoom
     for zoom in range(zoom_max + 1):
         # print('zoom:', zoom)
-        # xbsl = xdeg2scaled(xl, zoom) # x scaled lo
-        # xbsh = xdeg2scaled(xh, zoom) #a x scaled hi
-        # ybsl = ydeg2scaled(yl, zoom) # y scaled lo
-        # ybsh = ydeg2scaled(yh, zoom) # y scaled hi
+        # xbsl = xgeo2tile(xl, zoom) # x scaled lo
+        # xbsh = xgeo2tile(xh, zoom) #a x scaled hi
+        # ybsl = ygeo2tile(yl, zoom) # y scaled lo
+        # ybsh = ygeo2tile(yh, zoom) # y scaled hi
 
         # print('xbsl:', xbsl)
         # print('xbsh:', xbsh)
@@ -124,8 +124,8 @@ def find_best_zoom(xl, xh, yl, yh, xtiles, ytiles, target_square_size, zoom_max=
         #     print('find_best_zoom: x max')
         #     return zoom
 
-        x_scaled = abs(xdeg2scaled(xl, zoom)*256 - xdeg2scaled(xh, zoom)*256)
-        y_scaled = abs(ydeg2scaled(yl, zoom)*256 - ydeg2scaled(yh, zoom)*256)
+        x_scaled = abs(xgeo2tile(xl, zoom)*256 - xgeo2tile(xh, zoom)*256)
+        y_scaled = abs(ygeo2tile(yl, zoom)*256 - ygeo2tile(yh, zoom)*256)
         if x_scaled >= target_square_size or y_scaled >= target_square_size:
             break
     zoom_target = zoom - 1 # last zoom value
@@ -164,16 +164,16 @@ def get_boundary_extents(points_list):
 
 
 def get_expanded_boundary_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size):
-    y_pixel_width = abs(ydeg2scaled(yil, zoom_factor)*256 - ydeg2scaled(yih, zoom_factor)*256)
-    x_pixel_width = abs(xdeg2scaled(xil, zoom_factor)*256 - xdeg2scaled(xih, zoom_factor)*256)
+    y_pixel_width = abs(ygeo2tile(yil, zoom_factor)*256 - ygeo2tile(yih, zoom_factor)*256)
+    x_pixel_width = abs(xgeo2tile(xil, zoom_factor)*256 - xgeo2tile(xih, zoom_factor)*256)
 
     x_scaling = target_square_size / x_pixel_width
     y_scaling = target_square_size / y_pixel_width
 
-    yol = yindex2lat(((ydeg2scaled(yil, zoom_factor) * 256 * y_scaling) + boundary_pixels) / (256 * y_scaling), zoom_factor)
-    yoh = yindex2lat(((ydeg2scaled(yih, zoom_factor) * 256 * y_scaling) - boundary_pixels) / (256 * y_scaling), zoom_factor)
-    xol = xindex2lon(((xdeg2scaled(xil, zoom_factor) * 256 * x_scaling) - boundary_pixels) / (256 * x_scaling), zoom_factor)
-    xoh = xindex2lon(((xdeg2scaled(xih, zoom_factor) * 256 * x_scaling) + boundary_pixels) / (256 * x_scaling), zoom_factor)
+    yol = ytile2geo(((ygeo2tile(yil, zoom_factor) * 256 * y_scaling) + boundary_pixels) / (256 * y_scaling), zoom_factor)
+    yoh = ytile2geo(((ygeo2tile(yih, zoom_factor) * 256 * y_scaling) - boundary_pixels) / (256 * y_scaling), zoom_factor)
+    xol = xtile2geo(((xgeo2tile(xil, zoom_factor) * 256 * x_scaling) - boundary_pixels) / (256 * x_scaling), zoom_factor)
+    xoh = xtile2geo(((xgeo2tile(xih, zoom_factor) * 256 * x_scaling) + boundary_pixels) / (256 * x_scaling), zoom_factor)
     return xol, xoh, yol, yoh
 
 
@@ -188,8 +188,8 @@ def get_ll_points_array(points_list):
 def get_mapped_points_array(points_list, zoom):
     mapped_points = []
     for point in points_list:
-        y = ydeg2scaled(point['lat'], zoom)
-        x = xdeg2scaled(point['lon'], zoom)
+        y = ygeo2tile(point['lat'], zoom)
+        x = xgeo2tile(point['lon'], zoom)
         ts = point['time']
         mapped_points.append((x, y, ts))
     return mapped_points
@@ -272,16 +272,16 @@ def main(args):
     # y2 = yih
 
     # Get the extent mapping of the track extents in scaled map factors
-    xesl = min(xdeg2scaled(xih, zoom_factor), xdeg2scaled(xil, zoom_factor))     # x boundary scaled lo
-    xesh = max(xdeg2scaled(xih, zoom_factor), xdeg2scaled(xil, zoom_factor))     # x boundary scaled hi
-    yesl = min(ydeg2scaled(yih, zoom_factor), ydeg2scaled(yil, zoom_factor))     # y boundary scaled lo
-    yesh = max(ydeg2scaled(yih, zoom_factor), ydeg2scaled(yil, zoom_factor))     # y boundary scaled hi
+    xesl = min(xgeo2tile(xih, zoom_factor), xgeo2tile(xil, zoom_factor))     # x boundary scaled lo
+    xesh = max(xgeo2tile(xih, zoom_factor), xgeo2tile(xil, zoom_factor))     # x boundary scaled hi
+    yesl = min(ygeo2tile(yih, zoom_factor), ygeo2tile(yil, zoom_factor))     # y boundary scaled lo
+    yesh = max(ygeo2tile(yih, zoom_factor), ygeo2tile(yil, zoom_factor))     # y boundary scaled hi
 
     # Get the boundary mapping of the boundary extents in scaled map factors
-    xbsl = min(xdeg2scaled(xbh, zoom_factor), xdeg2scaled(xbl, zoom_factor))     # x boundary scaled lo
-    xbsh = max(xdeg2scaled(xbh, zoom_factor), xdeg2scaled(xbl, zoom_factor))     # x boundary scaled hi
-    ybsl = min(ydeg2scaled(ybh, zoom_factor), ydeg2scaled(ybl, zoom_factor))     # y boundary scaled lo
-    ybsh = max(ydeg2scaled(ybh, zoom_factor), ydeg2scaled(ybl, zoom_factor))     # y boundary scaled hi
+    xbsl = min(xgeo2tile(xbh, zoom_factor), xgeo2tile(xbl, zoom_factor))     # x boundary scaled lo
+    xbsh = max(xgeo2tile(xbh, zoom_factor), xgeo2tile(xbl, zoom_factor))     # x boundary scaled hi
+    ybsl = min(ygeo2tile(ybh, zoom_factor), ygeo2tile(ybl, zoom_factor))     # y boundary scaled lo
+    ybsh = max(ygeo2tile(ybh, zoom_factor), ygeo2tile(ybl, zoom_factor))     # y boundary scaled hi
 
     print('xbsh:', xbsh)
     print('xbsl:', xbsl)
@@ -319,10 +319,10 @@ def main(args):
             dr.line([(0, 0), (0, 255)], fill=color, width=1)
             dr.line([(0, 0), (255, 0)], fill=color, width=1)
             font = ImageFont.load_default()
-            lon_deg_min = xindex2lon(lon_tile, zoom_factor)
-            lat_deg_min = yindex2lat(lat_tile, zoom_factor)
-            lon_deg_max = xindex2lon(lon_tile + 1, zoom_factor)
-            lat_deg_max = yindex2lat(lat_tile + 1, zoom_factor)
+            lon_deg_min = xtile2geo(lon_tile, zoom_factor)
+            lat_deg_min = ytile2geo(lat_tile, zoom_factor)
+            lon_deg_max = xtile2geo(lon_tile + 1, zoom_factor)
+            lat_deg_max = ytile2geo(lat_tile + 1, zoom_factor)
             dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
             dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
 
