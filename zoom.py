@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env pybth_ion3
 '''
 zoom.py - Aggregate tile downloader and annotator
 
@@ -190,7 +190,7 @@ def geo_set_to_pixel(xl, xh, yl, yh, zoom):
     return xpl, xph, ypl, yph
 
 
-def get_expanded_boundary_extents(xgl, xgh, ygl, ygh, zoom_factor, boundary_pixels, target_square_size):
+def get_expanded_boundary_geo_extents(xgl, xgh, ygl, ygh, zoom_factor, boundary_pixels, target_square_size):
     # Calculate coords for boundary extension of boundary_pixels at the scaled up size (from base zoom size)
     xpl, xph, ypl, yph = geo_set_to_pixel(xgl, xgh, ygl, ygh, zoom_factor)
     x_size_pixel = xph - xpl
@@ -209,14 +209,14 @@ def get_expanded_boundary_extents(xgl, xgh, ygl, ygh, zoom_factor, boundary_pixe
 
     print('xpl`, xph`, ypl`, yph`:', xpl, xph, ypl, yph)
 
-    xbl = xpix2geo(xpl, zoom_factor)
-    xbh = xpix2geo(xph, zoom_factor)
-    ybl = ypix2geo(ypl, zoom_factor)
-    ybh = ypix2geo(yph, zoom_factor)
+    xbgl = xpix2geo(xpl, zoom_factor)
+    xbgh = xpix2geo(xph, zoom_factor)
+    ybgl = ypix2geo(ypl, zoom_factor)
+    ybgh = ypix2geo(yph, zoom_factor)
 
-    print('xbl, xbh, ybl, ybh:', xbl, xbh, ybl, ybh)
+    print('xbgl, xbgh, ybgl, ybgh:', xbgl, xbgh, ybgl, ybgh)
 
-    return xbl, xbh, ybl, ybh, scale_factor
+    return xbgl, xbgh, ybgl, ybgh, scale_factor
 
 
 def find_best_zoom(xl, xh, yl, yh, xtiles, ytiles, target_square_size, zoom_max=19):
@@ -224,20 +224,20 @@ def find_best_zoom(xl, xh, yl, yh, xtiles, ytiles, target_square_size, zoom_max=
     # loop until either x or y has exceeded zoom for gien tile_square_size - take previous zoom
     for zoom in range(zoom_max + 1):
         # print('zoom:', zoom)
-        # xbsl = xgeo2tile(xl, zoom) # x scaled lo
-        # xbsh = xgeo2tile(xh, zoom) #a x scaled hi
-        # ybsl = ygeo2tile(yl, zoom) # y scaled lo
-        # ybsh = ygeo2tile(yh, zoom) # y scaled hi
+        # xbtl = xgeo2tile(xl, zoom) # x scaled lo
+        # xbth = xgeo2tile(xh, zoom) #a x scaled hi
+        # ybtl = ygeo2tile(yl, zoom) # y scaled lo
+        # ybth = ygeo2tile(yh, zoom) # y scaled hi
 
-        # print('xbsl:', xbsl)
-        # print('xbsh:', xbsh)
-        # print('ybsl:', ybsl)
-        # print('ybsh:', ybsh)
+        # print('xbtl:', xbtl)
+        # print('xbth:', xbth)
+        # print('ybtl:', ybtl)
+        # print('ybth:', ybth)
 
-        # if (ybsh - ybsl) > ytiles:
+        # if (ybth - ybtl) > ytiles:
         #     print('find_best_zoom: y max')
         #     return zoom
-        # if (xbsh - xbsl) > xtiles:
+        # if (xbth - xbtl) > xtiles:
         #     print('find_best_zoom: x max')
         #     return zoom
 
@@ -257,7 +257,7 @@ def load_points_file(filename):
     return points_data
 
 
-def get_boundary_extents(points_list):
+def get_bounding_points(points_list):
     xl, xh, yl, yh = None, None, None, None
 
     for point in points_list:
@@ -298,6 +298,37 @@ def get_mapped_points_array(points_list, zoom):
     return mapped_points
 
 
+def get_pixel_mapped_points_array(points_list, zoom):
+    mapped_points = []
+    for point in points_list:
+        y = ygeo2pix(point['lat'], zoom)
+        x = xgeo2pix(point['lon'], zoom)
+        ts = point['time']
+        mapped_points.append((x, y, ts))
+    return mapped_points
+
+
+def get_scaled_inter_image_pixel_points_array(points_list, zoom, x_image_pixel_origin, y_image_pixel_origin, scaling_factor, with_ts=False):
+    mapped_points = []
+    # For each point
+    for point in points_list:
+        x_geo = point['lon']
+        y_geo = point['lat']
+        ts = point['time']
+        # 1. Convert to pixel point
+        # 2. Subtract the image (0, 0) pixel origin.\
+        # 3. Scale raw pixel points to image scaled pixel points
+        x_pix = (xgeo2pix(x_geo, zoom) - x_image_pixel_origin) * scaling_factor
+        y_pix = (ygeo2pix(y_geo, zoom) - y_image_pixel_origin) * scaling_factor
+        if with_ts:
+            point = (x_pix, y_pix, ts)
+        else:
+            point = (x_pix, y_pix)
+        mapped_points.append(point)
+
+    return mapped_points
+
+
 def in_tile_fn(xtile, ytile):
     def in_tile(point):
         xpoint, ypoint = point
@@ -334,8 +365,8 @@ def main(args):
     start_time = first_point['time']
     print(points[0])
 
-    xil, xih, yil, yih = (-122.1399074, -122.0867842, 37.4446023, 37.4941312)
-    # xil, xih, yil, yih = get_boundary_extents(points)
+    # xil, xih, yil, yih = (-122.1399074, -122.0867842, 37.4446023, 37.4941312)
+    xil, xih, yil, yih = get_bounding_points(points)
 
     print('boundary extents:', xil, xih, yil, yih)
 
@@ -367,8 +398,8 @@ def main(args):
         zoom_factor = int(zoom_override)
     print('zoom_factor:', zoom_factor)
 
-    xbl, xbh, ybl, ybh, scale_factor = get_expanded_boundary_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size)
-    print('expanded boundary extents:', xbl, xbh, ybl, ybh)
+    xbgl, xbgh, ybgl, ybgh, scale_factor = get_expanded_boundary_geo_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size)
+    print('expanded boundary extents:', xbgl, xbgh, ybgl, ybgh)
 
     # x1 = xil
     # y1 = yil
@@ -381,38 +412,44 @@ def main(args):
     yesl = min(ygeo2tile(yih, zoom_factor), ygeo2tile(yil, zoom_factor))     # y boundary scaled lo
     yesh = max(ygeo2tile(yih, zoom_factor), ygeo2tile(yil, zoom_factor))     # y boundary scaled hi
 
-    # Get the boundary mapping of the boundary extents in scaled map factors
-    xbsl = min(xgeo2tile(xbh, zoom_factor), xgeo2tile(xbl, zoom_factor))     # x boundary scaled lo
-    xbsh = max(xgeo2tile(xbh, zoom_factor), xgeo2tile(xbl, zoom_factor))     # x boundary scaled hi
-    ybsl = min(ygeo2tile(ybh, zoom_factor), ygeo2tile(ybl, zoom_factor))     # y boundary scaled lo
-    ybsh = max(ygeo2tile(ybh, zoom_factor), ygeo2tile(ybl, zoom_factor))     # y boundary scaled hi
+    # Get the mapping of boundary extent point in tile coords
+    xbtl = min(xgeo2tile(xbgh, zoom_factor), xgeo2tile(xbgl, zoom_factor))     # x boundary scaled lo
+    xbth = max(xgeo2tile(xbgh, zoom_factor), xgeo2tile(xbgl, zoom_factor))     # x boundary scaled hi
+    ybtl = min(ygeo2tile(ybgh, zoom_factor), ygeo2tile(ybgl, zoom_factor))     # y boundary scaled lo
+    ybth = max(ygeo2tile(ybgh, zoom_factor), ygeo2tile(ybgl, zoom_factor))     # y boundary scaled hi
 
-    print('xbsh:', xbsh)
-    print('xbsl:', xbsl)
-    print('ybsh:', ybsh)
-    print('ybsl:', ybsl)
+    # Get the mapping of boundary extent point in pixel coords
+    xbpl = min(xgeo2pix(xbgh, zoom_factor), xgeo2pix(xbgl, zoom_factor))     # x boundary scaled lo
+    xbph = max(xgeo2pix(xbgh, zoom_factor), xgeo2pix(xbgl, zoom_factor))     # x boundary scaled hi
+    ybpl = min(ygeo2pix(ybgh, zoom_factor), ygeo2pix(ybgl, zoom_factor))     # y boundary scaled lo
+    ybph = max(ygeo2pix(ybgh, zoom_factor), ygeo2pix(ybgl, zoom_factor))     # y boundary scaled hi
 
-    xtl = int(xbsl)     # x tile lo
-    xth = int(xbsh)     # x tile hi
-    ytl = int(ybsl)     # y tile lo
-    yth = int(ybsh)     # y tile hi
+    print('xbth:', xbth)
+    print('xbtl:', xbtl)
+    print('ybth:', ybth)
+    print('ybtl:', ybtl)
+
+    xbtl_i = int(xbtl)     # x tile lo
+    xbth_i = int(xbth)     # x tile hi
+    ybtl_i = int(ybtl)     # y tile lo
+    ybth_i = int(ybth)     # y tile hi
 
     mapped_points = get_mapped_points_array(points, zoom_factor)
 
     file_map = {}
 
-    for lon_tile in range(xtl, xth + 1):
-        for lat_tile in range(ytl, yth + 1):
+    for lon_tile in range(xbtl_i, xbth_i + 1):
+        for lat_tile in range(ybtl_i, ybth_i + 1):
             key = (lon_tile, lat_tile)
             print(lon_tile, lat_tile)
             output_filename = tile_directory +'/' +'tile_%06d_%06d_%02d.png' % (lon_tile, lat_tile, zoom_factor)
             file_map[key] = output_filename
-            tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
+            # tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
 
     print(file_map)
 
-    for lon_tile in range(xtl, xth + 1):
-        for lat_tile in range(ytl, yth + 1):
+    for lon_tile in range(xbtl_i, xbth_i + 1):
+        for lat_tile in range(ybtl_i, ybth_i + 1):
             key = (lon_tile, lat_tile)
             print(lon_tile, lat_tile)
             im = Image.open(file_map[key]).convert('RGB')
@@ -432,28 +469,28 @@ def main(args):
 
             color = ImageColor.getrgb('black')
 
-            if xbsl > lon_tile and xbsl < lon_tile + 1:
-                print('xbsl:', xbsl)
+            if xbtl > lon_tile and xbtl < lon_tile + 1:
+                print('xbtl:', xbtl)
                 print('lon_tile:', lon_tile)
-                x_offset = (xbsl - math.floor(xbsl)) * 256
+                x_offset = (xbtl - math.floor(xbtl)) * 256
                 dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
 
-            if  ybsl > lat_tile and ybsl < lat_tile + 1:
-                print('ybsl:', ybsl)
+            if  ybtl > lat_tile and ybtl < lat_tile + 1:
+                print('ybtl:', ybtl)
                 print('lat_tile:', lat_tile)
-                y_offset = (ybsl - math.floor(ybsl)) * 256
+                y_offset = (ybtl - math.floor(ybtl)) * 256
                 dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
-            if xbsh > lon_tile and xbsh < lon_tile + 1:
-                print('xbsh:', xbsh)
+            if xbth > lon_tile and xbth < lon_tile + 1:
+                print('xbth:', xbth)
                 print('lon_tile:', lon_tile)
-                x_offset = (xbsh - math.floor(xbsh)) * 256
+                x_offset = (xbth - math.floor(xbth)) * 256
                 dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
 
-            if ybsh > lat_tile and ybsh < lat_tile + 1:
-                print('ybsh:', ybsh)
+            if ybth > lat_tile and ybth < lat_tile + 1:
+                print('ybth:', ybth)
                 print('lat_tile:', lat_tile)
-                y_offset = (ybsh - math.floor(ybsh)) * 256
+                y_offset = (ybth - math.floor(ybth)) * 256
                 dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
             color = ImageColor.getrgb('red')
@@ -492,15 +529,15 @@ def main(args):
 
             im.save(file_map[key])
 
-    print('xtl:', xtl)
-    print('xth:', xth)
-    print('ytl:', ytl)
-    print('yth:', yth)
+    print('xbtl_i:', xbtl_i)
+    print('xbth_i:', xbth_i)
+    print('ybtl_i:', ybtl_i)
+    print('ybth_i:', ybth_i)
 
     im_full = None
-    for lon_tile in range(xtl, xth + 1):
+    for lon_tile in range(xbtl_i, xbth_i + 1):
         im_row = None
-        for lat_tile in range(ytl, yth + 1):
+        for lat_tile in range(ybtl_i, ybth_i + 1):
             key = (lon_tile, lat_tile)
             print(lon_tile, lat_tile)
             if im_row is None:
@@ -514,16 +551,52 @@ def main(args):
         else:
             im_full = get_concat_h(im_full, im_row)
 
-    in_tile = in_tile_fn(lon_tile, lat_tile)
-    pixel_points = mapped_to_pixel_points(mapped_points, xtl, ytl)
-    pixel_points_ts = mapped_to_pixel_points(mapped_points, xtl, ytl, with_ts=True)
+    im_full.save(output_file + '.raw.png')
+
+    orig_width, orig_height = im_full.size
+
+    scaled_width, scaled_height = int(round(orig_width * scale_factor, 0)), int(round(orig_height * scale_factor, 0))
+
+    im_full_resize = im_full.resize((scaled_width, scaled_height), Image.LANCZOS)
+
+    pixel_points = mapped_to_pixel_points(mapped_points, xbtl_i, ybtl_i)
+    pixel_points_ts = mapped_to_pixel_points(mapped_points, xbtl_i, ybtl_i, with_ts=True)
+
+    xbtl_i_pix = xtile2pix(xbtl_i, zoom_factor)
+    ybtl_i_pix = ytile2pix(ybtl_i, zoom_factor)
+
+    print('xbtl_i_pix, ybtl_i_pix:', xbtl_i_pix, ybtl_i_pix)
+    print('xbtl_i_pix_geo, ybtl_i_pix_geo:', xpix2geo(xbtl_i_pix, zoom_factor), ypix2geo(ybtl_i_pix, zoom_factor))
+
+    scaled_image_pixel_points = get_scaled_inter_image_pixel_points_array(points, zoom_factor, xbtl_i_pix, ybtl_i_pix, scale_factor)
 
     color = ImageColor.getrgb('blue')
 
-    dr = ImageDraw.Draw(im_full)
-    dr.point(pixel_points, fill=color)
+    dr = ImageDraw.Draw(im_full_resize)
+    dr.point(scaled_image_pixel_points, fill=color)
 
-    im_full.save(output_file)
+    im_full_resize.save(output_file)
+
+    inter_image_xbpl = int((xbpl - xbtl_i_pix) * scale_factor)
+    inter_image_xbph = int((xbph - xbtl_i_pix) * scale_factor)
+    inter_image_ybpl = int((ybpl - ybtl_i_pix) * scale_factor)
+    inter_image_ybph = int((ybph - ybtl_i_pix) * scale_factor)
+
+    print('xbpl, xbph, ybpl, ybph:', xbpl, xbph, ybpl, ybph)
+
+    xbpl_geo = xpix2geo(xbpl, zoom_factor)
+    xbph_geo = xpix2geo(xbph, zoom_factor)
+    ybpl_geo = ypix2geo(ybpl, zoom_factor)
+    ybph_geo = ypix2geo(ybph, zoom_factor)
+
+    print('xbpl_geo, xbph_geo, ybpl_geo, ybph_geo:', xbpl_geo, xbph_geo, ybpl_geo, ybph_geo)
+
+    box = inter_image_xbpl, inter_image_ybpl, inter_image_xbph, inter_image_ybph
+    print('im_full_resize.size:', im_full_resize.size)
+    print('crop:', box)
+    im_full_resize_crop = im_full_resize.crop(box)
+
+    im_full_resize_crop.save(output_file + '.resize_crop.png')
 
     gps_metadata = {
         'start_time': start_time,
@@ -535,6 +608,7 @@ def main(args):
         fd.write(json.dumps(gps_metadata))
 
     sh.open(output_file)
+    sh.open(output_file + '.resize_crop.png')
 
 
 if __name__ == '__main__':
