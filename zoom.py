@@ -318,8 +318,8 @@ def get_scaled_inter_image_pixel_points_array(points_list, zoom, x_image_pixel_o
         # 1. Convert to pixel point
         # 2. Subtract the image (0, 0) pixel origin.\
         # 3. Scale raw pixel points to image scaled pixel points
-        x_pix = (xgeo2pix(x_geo, zoom) - x_image_pixel_origin) * scaling_factor
-        y_pix = (ygeo2pix(y_geo, zoom) - y_image_pixel_origin) * scaling_factor
+        x_pix = int(round((xgeo2pix(x_geo, zoom) - x_image_pixel_origin) * scaling_factor, 0))
+        y_pix = int(round((ygeo2pix(y_geo, zoom) - y_image_pixel_origin) * scaling_factor, 0))
         if with_ts:
             point = (x_pix, y_pix, ts)
         else:
@@ -558,24 +558,13 @@ def main(args):
     scaled_width, scaled_height = int(round(orig_width * scale_factor, 0)), int(round(orig_height * scale_factor, 0))
 
     im_full_resize = im_full.resize((scaled_width, scaled_height), Image.LANCZOS)
+    im_full_resize.save(output_file)
 
-    pixel_points = mapped_to_pixel_points(mapped_points, xbtl_i, ybtl_i)
-    pixel_points_ts = mapped_to_pixel_points(mapped_points, xbtl_i, ybtl_i, with_ts=True)
+
+
 
     xbtl_i_pix = xtile2pix(xbtl_i, zoom_factor)
     ybtl_i_pix = ytile2pix(ybtl_i, zoom_factor)
-
-    print('xbtl_i_pix, ybtl_i_pix:', xbtl_i_pix, ybtl_i_pix)
-    print('xbtl_i_pix_geo, ybtl_i_pix_geo:', xpix2geo(xbtl_i_pix, zoom_factor), ypix2geo(ybtl_i_pix, zoom_factor))
-
-    scaled_image_pixel_points = get_scaled_inter_image_pixel_points_array(points, zoom_factor, xbtl_i_pix, ybtl_i_pix, scale_factor)
-
-    color = ImageColor.getrgb('blue')
-
-    dr = ImageDraw.Draw(im_full_resize)
-    dr.point(scaled_image_pixel_points, fill=color)
-
-    im_full_resize.save(output_file)
 
     inter_image_xbpl = int((xbpl - xbtl_i_pix) * scale_factor)
     inter_image_xbph = int((xbph - xbtl_i_pix) * scale_factor)
@@ -596,11 +585,35 @@ def main(args):
     print('crop:', box)
     im_full_resize_crop = im_full_resize.crop(box)
 
+
+
+
+
+
+    # pixel_points = mapped_to_pixel_points(mapped_points, xbtl_i, ybtl_i)
+    # pixel_points_ts = mapped_to_pixel_points(mapped_points, xbtl_i, ybtl_i, with_ts=True)
+
+
+    print('xbtl_i_pix, ybtl_i_pix:', xbtl_i_pix, ybtl_i_pix)
+    print('xbtl_i_pix_geo, ybtl_i_pix_geo:', xpix2geo(xbtl_i_pix, zoom_factor), ypix2geo(ybtl_i_pix, zoom_factor))
+
+    scaled_image_pixel_points = get_scaled_inter_image_pixel_points_array(points, zoom_factor, xbpl, ybpl, scale_factor)
+    scaled_image_pixel_points_ts = get_scaled_inter_image_pixel_points_array(points, zoom_factor, xbpl, ybpl, scale_factor, with_ts=True)
+
+    color = ImageColor.getrgb('blue')
+
+    dr = ImageDraw.Draw(im_full_resize_crop)
+    dr.point(scaled_image_pixel_points, fill=color)
+
+
     im_full_resize_crop.save(output_file + '.resize_crop.png')
+
+
+
 
     gps_metadata = {
         'start_time': start_time,
-        'gps_points': pixel_points_ts
+        'gps_points': scaled_image_pixel_points_ts
     }
 
     # dump pixel points
