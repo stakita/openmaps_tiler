@@ -444,7 +444,7 @@ def main(args):
             print(lon_tile, lat_tile)
             output_filename = tile_directory +'/' +'tile_%06d_%06d_%02d.png' % (lon_tile, lat_tile, zoom_factor)
             file_map[key] = output_filename
-            # tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
+            tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
 
     print(file_map)
 
