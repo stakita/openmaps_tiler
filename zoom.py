@@ -1,4 +1,4 @@
-#!/usr/bin/env pybth_ion3
+#!/usr/bin/env python3
 '''
 zoom.py - Aggregate tile downloader and annotator
 
