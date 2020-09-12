@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-'''gen_map_video.py
+'''gen_map_video_close.py
 Generate map video.
 
 Usage:
-  gen_map_video.py <background_image> <points_json> [--output=<OUTPUT_FILE>] [--fps=<FPS>] [--tstart=<TIME>] [--tfinish=<TIME>]
-  gen_map_video.py (-h | --help)
+  gen_map_video_close.py <background_image> <points_json> [--output=<OUTPUT_FILE>] [--fps=<FPS>] [--tstart=<TIME>] [--tfinish=<TIME>] [--width=<WIDTH>] [--height=<HEIGHT>]
+  gen_map_video_close.py (-h | --help)
 
 Options:
   -h --help                 Show this screen.
   --output=<OUTPUT_FILE>    Output file name [default: map.avi]
   --fps=<FPS>               Override frames per second [default: 25]
+  --width=<WIDTH>           Width of output portal [default: 1022]
+  --height=<HEIGHT>         Hegith of output portal [default: 1022]
 '''
 import sys
 import numpy as np
@@ -55,10 +57,14 @@ def get_timestamp(time_string):
     return dt.timestamp()
 
 
-def generate_map_video(background_image, points_json_file, output_file, fps, tstart, tfinish):
+def generate_map_video(background_image, points_json_file, output_file, fps, tstart, tfinish, width, height):
     image = cv2.imread(background_image)
-    height, width, _ = image.shape
-    print(height, width)
+    bg_height, bg_width, _ = image.shape
+    print(bg_height, bg_width)
+
+    x_portal_offset = int(width / 2)
+    y_portal_offset = int(height / 2)
+
 
     points, start_time_string = load_points_file(points_json_file)
 
@@ -133,11 +139,15 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
             ylast = ypos
             tlast = tpos
 
+        # position of frame in complete background image
+        frame_pos_x = xlast - x_portal_offset
+        frame_pos_y = ylast - y_portal_offset
+
         t2 = time.time()
-        frame = copy.copy(image)
+        frame = copy.copy(image[frame_pos_y:frame_pos_y+height, frame_pos_x:frame_pos_x+width])
 
         t3 = time.time()
-        cv2.circle(frame, (xlast, ylast), 15, color, thickness)
+        cv2.circle(frame, (x_portal_offset, y_portal_offset), 15, color, thickness)
         t4 = time.time()
         video.write(frame)
         t5 = time.time()
@@ -163,12 +173,16 @@ def main(args):
             tstart = float(args['--tstart'])
         if '--tfinish' in args and args['--tfinish'] is not None:
             tfinish = float(args['--tfinish'])
+
+        width = int(args['--width'])
+        height = int(args['--height'])
+
     except ValueError as e:
         print('Error: %s\n' % str(e))
         print(__doc__)
         return 2
 
-    generate_map_video(background_image, points_json_file, output_file, fps, tstart, tfinish)
+    generate_map_video(background_image, points_json_file, output_file, fps, tstart, tfinish, width, height)
 
     return 0
 
