@@ -15,6 +15,7 @@ import tile_dl
 import json
 import sh
 import sys
+import os
 
 try:
     from PIL import Image
@@ -151,14 +152,14 @@ def get_concat_v(im1, im2):
     return dst
 
 
-def maximize_zoom(xl, xh, yl, yh, target_square_size, zoom_max=19):
+def maximize_zoom(xl, xh, yl, yh, target_square_size, boundary_pixels=20, zoom_max=19):
     print('maximize_zoom - xl: %f, xh: %f, yl: %f, yh: %f, target_square_size: %d, zoom_max: %f' % (xl, xh, yl, yh, target_square_size, zoom_max))
     # loop until either x or y has exceeded zoom for gien tile_square_size - take previous zoom
     for zoom in range(zoom_max + 1):
         xpl, xph, ypl, yph = geo_set_to_pixel(xl, xh, yl, yh, zoom)
         x_size_pixel = xph - xpl
         y_size_pixel = yph - ypl
-        if x_size_pixel >= target_square_size or y_size_pixel >= target_square_size:
+        if (x_size_pixel + (2 * boundary_pixels)) >= target_square_size or (y_size_pixel + (2 * boundary_pixels)) >= target_square_size:
             break
     zoom_target = zoom - 1 # last zoom value
     print('--> zoom_target: %d' % (zoom_target))
@@ -190,29 +191,50 @@ def geo_set_to_pixel(xl, xh, yl, yh, zoom):
     return xpl, xph, ypl, yph
 
 
-def get_expanded_boundary_geo_extents(xgl, xgh, ygl, ygh, zoom_factor, boundary_pixels, target_square_size):
+def get_expanded_boundary_geo_extents(xtgl, xtgh, ytgl, ytgh, zoom_factor, boundary_pixels, target_square_size):
     # Calculate coords for boundary extension of boundary_pixels at the scaled up size (from base zoom size)
-    xpl, xph, ypl, yph = geo_set_to_pixel(xgl, xgh, ygl, ygh, zoom_factor)
-    x_size_pixel = xph - xpl
-    y_size_pixel = yph - ypl
+    xtpl, xtph, ytpl, ytph = geo_set_to_pixel(xtgl, xtgh, ytgl, ytgh, zoom_factor)
 
-    scale_base = max(x_size_pixel, y_size_pixel)
-    scale_factor = target_square_size / scale_base
+    xp_track_size = xtph - xtpl
+    yp_track_size = ytph - ytpl
+
+    xp_track_center = (xtph + xtpl) / 2
+    yp_track_center = (ytph + ytpl) / 2
+
+    # scale_x = (target_square_size - (2 * boundary_pixels)) / xp_track_size
+    # scale_y = (target_square_size - (2 * boundary_pixels)) / yp_track_size
+    scale_x = (target_square_size - (2 * boundary_pixels)) / xp_track_size
+    scale_y = (target_square_size - (2 * boundary_pixels)) / yp_track_size
+
+    print('scale_x:', scale_x)
+    print('scale_y:', scale_y)
+
+    scale_factor = min(scale_x, scale_y)
+
+    # return 0,0,0,0,0
+    # xp_track_size = xtph - xtpl
+    # yp_track_size = ytph - ytpl
+
+    # xp_center = (xtph + xtpl) / 2
+    # yp_center = (ytph + ytpl) / 2
+
+    # scale_base = max(x_size_pixel, y_size_pixel)
+    # scale_factor = target_square_size / scale_base
     print('scale_factor:', scale_factor)
 
-    print('xpl, xph, ypl, yph:', xpl, xph, ypl, yph)
+    print('xtpl, xtph, ytpl, ytph:', xtpl, xtph, ytpl, ytph)
 
-    xpl -= boundary_pixels / scale_factor
-    xph += boundary_pixels / scale_factor
-    ypl -= boundary_pixels / scale_factor
-    yph += boundary_pixels / scale_factor
+    xbpl = xp_track_center - (target_square_size / 2) / scale_factor
+    xbph = xp_track_center + (target_square_size / 2) / scale_factor
+    ybpl = yp_track_center - (target_square_size / 2) / scale_factor
+    ybph = yp_track_center + (target_square_size / 2) / scale_factor
 
-    print('xpl`, xph`, ypl`, yph`:', xpl, xph, ypl, yph)
+    print('xbpl, xbph, ybpl, ybph:', xbpl, xbph, ybpl, ybph)
 
-    xbgl = xpix2geo(xpl, zoom_factor)
-    xbgh = xpix2geo(xph, zoom_factor)
-    ybgl = ypix2geo(ypl, zoom_factor)
-    ybgh = ypix2geo(yph, zoom_factor)
+    xbgl = xpix2geo(xbpl, zoom_factor)
+    xbgh = xpix2geo(xbph, zoom_factor)
+    ybgl = ypix2geo(ybpl, zoom_factor)
+    ybgh = ypix2geo(ybph, zoom_factor)
 
     print('xbgl, xbgh, ybgl, ybgh:', xbgl, xbgh, ybgl, ybgh)
 
@@ -365,15 +387,15 @@ def main(args):
     start_time = first_point['time']
     print(points[0])
 
-    # xil, xih, yil, yih = (-122.1399074, -122.0867842, 37.4446023, 37.4941312)
-    xil, xih, yil, yih = get_bounding_points(points)
+    # xtgl, xtgh, ytgl, ytgh = (-122.1399074, -122.0867842, 37.4446023, 37.4941312)
+    xtgl, xtgh, ytgl, ytgh = get_bounding_points(points)
 
-    print('boundary extents:', xil, xih, yil, yih)
+    print('track extents:', xtgl, xtgh, ytgl, ytgh)
 
 
 
-    xis = xih - xil # x input span
-    yis = yih - yil # x input span
+    xis = xtgh - xtgl # x input span
+    yis = ytgh - ytgl # x input span
 
     border_factor = 1.2
     x_tiles = 5
@@ -382,35 +404,40 @@ def main(args):
     # y_tiles = 1
     zoom_max = 19
     boundary_pixels = 20
-    target_square_size = 982
+    target_square_size = 1022
 
-    print('xil:', xil)
-    print('xih:', xih)
-    print('yil:', yil)
-    print('yih:', yih)
+    print('xtgl:', xtgl)
+    print('xtgh:', xtgh)
+    print('ytgl:', ytgl)
+    print('ytgh:', ytgh)
     print('xis:', xis)
     print('yis:', yis)
 
     if zoom_override is None:
-        # zoom_factor = find_best_zoom(xil, xih, yih, yil, x_tiles, y_tiles, target_square_size)
-        zoom_factor = maximize_zoom(xil, xih, yil, yih, target_square_size)
+        # zoom_factor = find_best_zoom(xtgl, xtgh, ytgh, ytgl, x_tiles, y_tiles, target_square_size)
+        zoom_factor = maximize_zoom(xtgl, xtgh, ytgl, ytgh, target_square_size, boundary_pixels=boundary_pixels)
     else:
         zoom_factor = int(zoom_override)
     print('zoom_factor:', zoom_factor)
 
-    xbgl, xbgh, ybgl, ybgh, scale_factor = get_expanded_boundary_geo_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size)
+    # xbgl, xbgh, ybgl, ybgh, scale_factor = get_expanded_boundary_geo_extents(xtgl, xtgh, ytgl, ytgh, zoom_factor, boundary_pixels, target_square_size)
+    # print('expanded boundary extents:', xbgl, xbgh, ybgl, ybgh)
+
+    xbgl, xbgh, ybgl, ybgh, scale_factor = get_expanded_boundary_geo_extents(xtgl, xtgh, ytgl, ytgh, zoom_factor, boundary_pixels, target_square_size)
     print('expanded boundary extents:', xbgl, xbgh, ybgl, ybgh)
 
-    # x1 = xil
-    # y1 = yil
-    # x2 = xih
-    # y2 = yih
+    # sys.exit(0)
+
+    # x1 = xtgl
+    # y1 = ytgl
+    # x2 = xtgh
+    # y2 = ytgh
 
     # Get the extent mapping of the track extents in scaled map factors
-    xesl = min(xgeo2tile(xih, zoom_factor), xgeo2tile(xil, zoom_factor))     # x boundary scaled lo
-    xesh = max(xgeo2tile(xih, zoom_factor), xgeo2tile(xil, zoom_factor))     # x boundary scaled hi
-    yesl = min(ygeo2tile(yih, zoom_factor), ygeo2tile(yil, zoom_factor))     # y boundary scaled lo
-    yesh = max(ygeo2tile(yih, zoom_factor), ygeo2tile(yil, zoom_factor))     # y boundary scaled hi
+    xesl = min(xgeo2tile(xtgh, zoom_factor), xgeo2tile(xtgl, zoom_factor))     # x boundary scaled lo
+    xesh = max(xgeo2tile(xtgh, zoom_factor), xgeo2tile(xtgl, zoom_factor))     # x boundary scaled hi
+    yesl = min(ygeo2tile(ytgh, zoom_factor), ygeo2tile(ytgl, zoom_factor))     # y boundary scaled lo
+    yesh = max(ygeo2tile(ytgh, zoom_factor), ygeo2tile(ytgl, zoom_factor))     # y boundary scaled hi
 
     # Get the mapping of boundary extent point in tile coords
     xbtl = min(xgeo2tile(xbgh, zoom_factor), xgeo2tile(xbgl, zoom_factor))     # x boundary scaled lo
@@ -444,7 +471,8 @@ def main(args):
             print(lon_tile, lat_tile)
             output_filename = tile_directory +'/' +'tile_%06d_%06d_%02d.png' % (lon_tile, lat_tile, zoom_factor)
             file_map[key] = output_filename
-            tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
+            if not os.path.exists(output_filename):
+                tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
 
     print(file_map)
 
