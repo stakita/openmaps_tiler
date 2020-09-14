@@ -481,79 +481,71 @@ def main(args):
             key = (lon_tile, lat_tile)
             print(lon_tile, lat_tile)
             im = Image.open(file_map[key]).convert('RGB')
-            dr = ImageDraw.Draw(im)
+            # dr = ImageDraw.Draw(im)
 
-            # grid lines
-            color = ImageColor.getrgb('brown')
-            dr.line([(0, 0), (0, 255)], fill=color, width=1)
-            dr.line([(0, 0), (255, 0)], fill=color, width=1)
-            font = ImageFont.load_default()
-            lon_deg_min = xtile2geo(lon_tile, zoom_factor)
-            lat_deg_min = ytile2geo(lat_tile, zoom_factor)
-            lon_deg_max = xtile2geo(lon_tile + 1, zoom_factor)
-            lat_deg_max = ytile2geo(lat_tile + 1, zoom_factor)
-            dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
-            dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
+            # # grid lines
+            # color = ImageColor.getrgb('brown')
+            # dr.line([(0, 0), (0, 255)], fill=color, width=1)
+            # dr.line([(0, 0), (255, 0)], fill=color, width=1)
+            # font = ImageFont.load_default()
+            # lon_deg_min = xtile2geo(lon_tile, zoom_factor)
+            # lat_deg_min = ytile2geo(lat_tile, zoom_factor)
+            # lon_deg_max = xtile2geo(lon_tile + 1, zoom_factor)
+            # lat_deg_max = ytile2geo(lat_tile + 1, zoom_factor)
+            # dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
+            # dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
 
-            color = ImageColor.getrgb('black')
+            # color = ImageColor.getrgb('black')
 
-            if xbtl > lon_tile and xbtl < lon_tile + 1:
-                print('xbtl:', xbtl)
-                print('lon_tile:', lon_tile)
-                x_offset = (xbtl - math.floor(xbtl)) * 256
-                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
+            # if xbtl > lon_tile and xbtl < lon_tile + 1:
+            #     print('xbtl:', xbtl)
+            #     print('lon_tile:', lon_tile)
+            #     x_offset = (xbtl - math.floor(xbtl)) * 256
+            #     dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
 
-            if  ybtl > lat_tile and ybtl < lat_tile + 1:
-                print('ybtl:', ybtl)
-                print('lat_tile:', lat_tile)
-                y_offset = (ybtl - math.floor(ybtl)) * 256
-                dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
+            # if  ybtl > lat_tile and ybtl < lat_tile + 1:
+            #     print('ybtl:', ybtl)
+            #     print('lat_tile:', lat_tile)
+            #     y_offset = (ybtl - math.floor(ybtl)) * 256
+            #     dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
-            if xbth > lon_tile and xbth < lon_tile + 1:
-                print('xbth:', xbth)
-                print('lon_tile:', lon_tile)
-                x_offset = (xbth - math.floor(xbth)) * 256
-                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
+            # if xbth > lon_tile and xbth < lon_tile + 1:
+            #     print('xbth:', xbth)
+            #     print('lon_tile:', lon_tile)
+            #     x_offset = (xbth - math.floor(xbth)) * 256
+            #     dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
 
-            if ybth > lat_tile and ybth < lat_tile + 1:
-                print('ybth:', ybth)
-                print('lat_tile:', lat_tile)
-                y_offset = (ybth - math.floor(ybth)) * 256
-                dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
+            # if ybth > lat_tile and ybth < lat_tile + 1:
+            #     print('ybth:', ybth)
+            #     print('lat_tile:', lat_tile)
+            #     y_offset = (ybth - math.floor(ybth)) * 256
+            #     dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
-            color = ImageColor.getrgb('red')
+            # color = ImageColor.getrgb('red')
 
-            if xesl > lon_tile and xesl < lon_tile + 1:
-                print('xesl:', xesl)
-                print('lon_tile:', lon_tile)
-                x_offset = (xesl - math.floor(xesl)) * 256
-                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
+            # if xesl > lon_tile and xesl < lon_tile + 1:
+            #     print('xesl:', xesl)
+            #     print('lon_tile:', lon_tile)
+            #     x_offset = (xesl - math.floor(xesl)) * 256
+            #     dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
 
-            if  yesl > lat_tile and yesl < lat_tile + 1:
-                print('yesl:', yesl)
-                print('lat_tile:', lat_tile)
-                y_offset = (yesl - math.floor(yesl)) * 256
-                dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
+            # if  yesl > lat_tile and yesl < lat_tile + 1:
+            #     print('yesl:', yesl)
+            #     print('lat_tile:', lat_tile)
+            #     y_offset = (yesl - math.floor(yesl)) * 256
+            #     dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
-            if xesh > lon_tile and xesh < lon_tile + 1:
-                print('xesh:', xesh)
-                print('lon_tile:', lon_tile)
-                x_offset = (xesh - math.floor(xesh)) * 256
-                dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
+            # if xesh > lon_tile and xesh < lon_tile + 1:
+            #     print('xesh:', xesh)
+            #     print('lon_tile:', lon_tile)
+            #     x_offset = (xesh - math.floor(xesh)) * 256
+            #     dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
 
-            if yesh > lat_tile and yesh < lat_tile + 1:
-                print('yesh:', yesh)
-                print('lat_tile:', lat_tile)
-                y_offset = (yesh - math.floor(yesh)) * 256
-                dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
-
-            # in_tile = in_tile_fn(lon_tile, lat_tile)
-            # tile_ll_points = list(filter(in_tile, mapped_points))
-            # tile_inter_points = list(map(lambda x: (int(divmod(x[0], 1)[1] * 256), int(divmod(x[1], 1)[1] * 256)), tile_ll_points))
-
-            # color = ImageColor.getrgb('blue')
-            # if len(tile_inter_points) > 0:
-            #     dr.point(tile_inter_points, fill=color)
+            # if yesh > lat_tile and yesh < lat_tile + 1:
+            #     print('yesh:', yesh)
+            #     print('lat_tile:', lat_tile)
+            #     y_offset = (yesh - math.floor(yesh)) * 256
+            #     dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
 
             im.save(file_map[key])
 
