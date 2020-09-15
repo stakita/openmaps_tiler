@@ -640,8 +640,8 @@ def main(args):
     with open(output_metadata_file, 'w+') as fd:
         fd.write(json.dumps(gps_metadata))
 
-    sh.open(output_file)
-    sh.open(output_file + '.resize_crop.png')
+    # sh.open(output_file)
+    # sh.open(output_file + '.resize_crop.png')
 
 
 if __name__ == '__main__':
