@@ -459,11 +459,11 @@ def main(args):
         xgeo = xpix2geo(xpix, zoom_factor)
         ygeo = ypix2geo(ypix, zoom_factor)
 
-        print('xgeo:', xgeo)
-        print('ygeo:', ygeo)
+        # print('xgeo:', xgeo)
+        # print('ygeo:', ygeo)
 
-        print('xpix:', xpix)
-        print('ypix:', ypix)
+        # print('xpix:', xpix)
+        # print('ypix:', ypix)
 
         pix_x1 = xpix - half_frame
         pix_x2 = xpix + half_frame
@@ -480,15 +480,15 @@ def main(args):
         tile_y1 = int(xpix2tile(pix_y1, zoom_factor))
         tile_y2 = int(xpix2tile(pix_y2, zoom_factor))
 
-        print('pix_x1:', pix_x1)
-        print('pix_x2:', pix_x2)
-        print('pix_y1:', pix_y1)
-        print('pix_y2:', pix_y2)
+        # print('pix_x1:', pix_x1)
+        # print('pix_x2:', pix_x2)
+        # print('pix_y1:', pix_y1)
+        # print('pix_y2:', pix_y2)
 
-        print('tile_x1:', tile_x1)
-        print('tile_x2:', tile_x2)
-        print('tile_y1:', tile_y1)
-        print('tile_y2:', tile_y2)
+        # print('tile_x1:', tile_x1)
+        # print('tile_x2:', tile_x2)
+        # print('tile_y1:', tile_y1)
+        # print('tile_y2:', tile_y2)
 
         for xtile in range(tile_x1, tile_x2 + 1):
             for ytile in range(tile_y1, tile_y2 + 1):
@@ -657,17 +657,17 @@ def main(args):
     #         im = Image.open(file_map[key]).convert('RGB')
     #         dr = ImageDraw.Draw(im)
 
-    #         # grid lines
-    #         color = ImageColor.getrgb('brown')
-    #         dr.line([(0, 0), (0, 255)], fill=color, width=1)
-    #         dr.line([(0, 0), (255, 0)], fill=color, width=1)
-    #         font = ImageFont.load_default()
-    #         lon_deg_min = xtile2geo(lon_tile, zoom_factor)
-    #         lat_deg_min = ytile2geo(lat_tile, zoom_factor)
-    #         lon_deg_max = xtile2geo(lon_tile + 1, zoom_factor)
-    #         lat_deg_max = ytile2geo(lat_tile + 1, zoom_factor)
-    #         dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
-    #         dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
+            # grid lines
+            # color = ImageColor.getrgb('brown')
+            # dr.line([(0, 0), (0, 255)], fill=color, width=1)
+            # dr.line([(0, 0), (255, 0)], fill=color, width=1)
+            # font = ImageFont.load_default()
+            # lon_deg_min = xtile2geo(lon_tile, zoom_factor)
+            # lat_deg_min = ytile2geo(lat_tile, zoom_factor)
+            # lon_deg_max = xtile2geo(lon_tile + 1, zoom_factor)
+            # lat_deg_max = ytile2geo(lat_tile + 1, zoom_factor)
+            # dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
+            # dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
 
     #         color = ImageColor.getrgb('black')
 
