@@ -34,7 +34,6 @@ class GenerateError(Exception):
     pass
 
 
-
 def generate_map_video(background_image, points_json_file, output_file, fps, tstart, tfinish, width, height):
     image = cv2.imread(background_image)
     bg_height, bg_width, _ = image.shape
@@ -53,7 +52,6 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
     print(start_time)
     print(finish_time)
     total_seconds = finish_time - start_time
-    # total_seconds = 10
     print(total_seconds)
 
     if tstart:
@@ -89,20 +87,13 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
     tstring = ''
     points_index = 0
 
-    # t0 = t1 = t2 = t3 = t4 = t5 = 0
-    # s1 = s2 = s3 = s4 = s5 = 0
-
     for frame in range(frame_start, frame_finish):
-        # t0 = time.time()
         update_period = 1000
         if frame % update_period == 0:
             frame_total = frame + 1
             print('%3.2f %d %d' % (frame / fps, frame, frames))
-            # print('%3.2f %d %d  a1 = %f, a2 = %f, a3 = %f, a4 = %f, a5 = %f' % (frame / fps, frame, frames, s1 / frame_total, s2 / frame_total, s3 / frame_total, s4 / frame_total, s5 / frame_total))
 
         current_time = frame / fps
-
-        # t1 = time.time()
 
         while tpos_adj < current_time and points_index < len(points):
             point = points[points_index]
@@ -121,34 +112,17 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
             ylast = ypos
             tlast = tpos
 
-        # text = '%d fsec=%3.2f xlast=%d ylast=%d tpos=%d tpos_adj=%3.2f timestamp=%s points_index=%d' % (frame, current_time, xlast, ylast, tpos, tpos_adj, tstring, points_index)
-        # print(text)
-
         # position of frame in complete background image
         frame_pos_x = xlast - x_portal_offset
         frame_pos_y = ylast - y_portal_offset
 
-        # t2 = time.time()
         frame = copy.copy(image[frame_pos_y:frame_pos_y+height, frame_pos_x:frame_pos_x+width])
         if frame.shape != expected_frame_geometry:
             raise GenerateError('Size does not match portal: %s - expected %s' % (frame.shape, expected_frame_geometry))
-        # print(repr(frame.size))
-        # print(repr(frame.size) + ' ' + repr(frame.shape))
-        # sys.exit(0)
 
-        # t3 = time.time()
         cv2.circle(frame, (x_portal_offset, y_portal_offset), 15, color, thickness)
 
-        # cv2.putText(frame, text, (20,40), cv2.FONT_HERSHEY_SIMPLEX, 0.25, color=(255, 0, 0), thickness=1)
-        # t4 = time.time()
         video.write(frame)
-        # t5 = time.time()
-
-        # s1 += t1 - t0
-        # s2 += t2 - t1
-        # s3 += t3 - t2
-        # s4 += t4 - t3
-        # s5 += t5 - t4
 
     video.release()
 
@@ -174,7 +148,7 @@ def main(args):
         print(__doc__)
         return 2
 
-    # Todo: output file is written to incrementally breaking make's dependencies on failure - use tempfile and copy at completion
+    # TODO: output file is written to incrementally breaking make's dependencies on failure - use tempfile and copy at completion
     generate_map_video(background_image, points_json_file, output_file, fps, tstart, tfinish, width, height)
 
     return 0

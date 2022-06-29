@@ -41,7 +41,6 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
     print(start_time)
     print(finish_time)
     total_seconds = finish_time - start_time
-    # total_seconds = 10
     print(total_seconds)
 
     if tstart:
@@ -75,20 +74,13 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
     ylast = ypos
     tlast = tpos
 
-    t0 = t1 = t2 = t3 = t4 = t5 = 0
-    s1 = s2 = s3 = s4 = s5 = 0
-
     for frame in range(frame_start, frame_finish):
-        t0 = time.time()
         update_period = 1000
         if frame % update_period == 0:
             frame_total = frame + 1
-            # print('%3.2f %d %d' % (frame / fps, frame, frames))
-            print('%3.2f %d %d  a1 = %f, a2 = %f, a3 = %f, a4 = %f, a5 = %f' % (frame / fps, frame, frames, s1 / frame_total, s2 / frame_total, s3 / frame_total, s4 / frame_total, s5 / frame_total))
+            print('%3.2f %d %d' % (frame / fps, frame, frames))
 
         current_time = frame / fps
-
-        t1 = time.time()
 
         while tpos_adj < current_time and len(points) > 0:
             point = points.pop(0)
@@ -105,20 +97,10 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
             ylast = ypos
             tlast = tpos
 
-        t2 = time.time()
         frame = copy.copy(image)
 
-        t3 = time.time()
         cv2.circle(frame, (xlast, ylast), 15, color, thickness)
-        t4 = time.time()
         video.write(frame)
-        t5 = time.time()
-
-        s1 += t1 - t0
-        s2 += t2 - t1
-        s3 += t3 - t2
-        s4 += t4 - t3
-        s5 += t5 - t4
 
     video.release()
 
