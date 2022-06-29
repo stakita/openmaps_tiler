@@ -17,42 +17,15 @@ import copy
 import datetime
 import json
 import time
-
-try:
-    import cv2
-except ImportError as e:
-    sys.stderr.write('Error: %s\nTry:\n    pip install opencv-python\n' % e)
-    sys.exit(1)
-
+from lib import points_file
 
 try:
     from docopt import docopt
+    import cv2
 except ImportError as e:
-    sys.stderr.write('Error: %s\nTry:\n    pip3 install --user docopt\n' % e)
+    installs = ['docopt', 'opencv-python']
+    sys.stderr.write('Error: %s\nTry:\n    pip install --user %s\n' % (e, ' '.join(installs)))
     sys.exit(1)
-
-
-def load_points_file(filename):
-    with open(filename) as fd:
-        body = fd.read()
-    gps_data = json.loads(body)
-    return gps_data['gps_points'], gps_data['start_time']
-
-
-def get_start_time(points):
-    time_string = points[0][2]
-    return get_timestamp(time_string)
-
-
-def get_finish_time(points):
-    time_string = points[-1][2]
-    return get_timestamp(time_string)
-
-
-def get_timestamp(time_string):
-    # dt = datetime.datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%S.%f%z")
-    dt = datetime.datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%S%z")
-    return dt.timestamp()
 
 
 def generate_map_video(background_image, points_json_file, output_file, fps, tstart, tfinish):
@@ -60,10 +33,10 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
     height, width, _ = image.shape
     print(height, width)
 
-    points, start_time_string = load_points_file(points_json_file)
+    points, start_time_string = points_file.load(points_json_file)
 
-    start_time = get_timestamp(start_time_string)
-    finish_time =  get_finish_time(points)
+    start_time = points_file.get_timestamp(start_time_string)
+    finish_time =  points_file.get_finish_time(points)
 
     print(start_time)
     print(finish_time)
@@ -89,13 +62,12 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
     color = (40, 40, 255)
     thickness = 3
 
-    # fourcc = cv2.VideoWriter_fourcc(*'MP42')
     fourcc = cv2.VideoWriter_fourcc(*'H264')
     video = cv2.VideoWriter(output_file, fourcc, float(fps), (width, height))
 
     xpos = points[0][0]
     ypos = points[0][1]
-    tpos = get_timestamp(points[0][2]) - start_time
+    tpos = points_file.get_timestamp(points[0][2]) - start_time
     tpos_last = tpos
     tpos_adj = tpos
 
@@ -122,7 +94,7 @@ def generate_map_video(background_image, points_json_file, output_file, fps, tst
             point = points.pop(0)
             xpos = point[0]
             ypos = point[1]
-            tpos = get_timestamp(point[2]) - start_time
+            tpos = points_file.get_timestamp(point[2]) - start_time
             if tpos == tpos_last:
                 tpos_adj += 1/18
             else:
