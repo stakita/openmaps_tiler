@@ -3,12 +3,13 @@
 zoom_close.py - Aggregate tile downloader and annotator
 
 Usage:
-  zoom_close.py <gps-metadata> --zoom=<factor> [--output=<filename>]
+  zoom_close.py <gps-metadata> --zoom=<factor> [--output=<filename>] [--tile-cache=<directory>]
 
 Options:
   -h --help             Show this screen.
   --output=<filename>   Output filename [default: output.png].
   --zoom=<factor>       Override zoom factor.
+  --tile-cache=<directory>  Tile cache directory [default: tiles].
 '''
 import math
 import tile_dl
@@ -398,7 +399,7 @@ def main(args):
     output_metadata_file = output_file + '.meta.txt'
     zoom_override = args['--zoom']
 
-    tile_directory = 'tiles'
+    tile_directory = args['--tile-cache']
     points = load_points_file(gps_metadata_filename)
 
     first_point = points.pop(0)
