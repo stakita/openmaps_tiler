@@ -38,7 +38,7 @@ logging.basicConfig(level=logging.INFO,
                     format='(%(threadName)-10s) %(message)-s')
 
 
-def markup_tile(lat_tile_float, lon_tile_float, tile_filename, markup_filename, color='blue'):
+def markup_tile(tile_point, tile_filename, markup_filename, color='blue'):
 
     im = Image.open(tile_filename)
     im = im.convert('RGB')
@@ -46,15 +46,17 @@ def markup_tile(lat_tile_float, lon_tile_float, tile_filename, markup_filename, 
     dr = ImageDraw.Draw(im)
     line_color = ImageColor.getrgb(color)
 
-    if lat_tile_float is not None:
-        x_rem = lat_tile_float - math.floor(lat_tile_float)
-        x_tile_offset = int(x_rem * 256)
-        dr.line([(x_tile_offset, 0), (x_tile_offset, im.size[0])], fill=line_color, width=1)
+    pixel_point = osm.tile_point_to_pixel_point(tile_point)
 
-    if lon_tile_float is not None:
-        y_rem = lon_tile_float - math.floor(lon_tile_float)
-        y_tile_offset = int(y_rem * 256)
-        dr.line([(0, y_tile_offset), (im.size[1], y_tile_offset)], fill=line_color, width=1)
+    tile_zero_point = osm.tile_instance(tile_point)
+    pixel_zero_ref = osm.tile_point_to_pixel_point(tile_zero_point)
+
+    x_offset = pixel_point.x - pixel_zero_ref.x
+    y_offset = pixel_point.y - pixel_zero_ref.y
+
+    dr.line([(x_offset, 0), (x_offset, im.size[0])], fill=line_color, width=1)
+
+    dr.line([(0, y_offset), (im.size[1], y_offset)], fill=line_color, width=1)
 
     im.save(markup_filename, 'PNG')
 
@@ -79,7 +81,7 @@ def main(args):
     osm.download_tile(tile, tile_filename)
 
     if mark_loc:
-        markup_tile(tile.x, tile.y, tile_filename, markup_filename, 'red')
+        markup_tile(tile, tile_filename, markup_filename, 'red')
 
     # Use "open" to display image for viewing
     sh.open(markup_filename) # pylint: disable=E1101
