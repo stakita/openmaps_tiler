@@ -404,7 +404,6 @@ def main(args):
     start_time = first_point['time']
     print(points[0])
 
-    # xil, xih, yil, yih = (-122.1399074, -122.0867842, 37.4446023, 37.4941312)
     xil, xih, yil, yih = get_bounding_points(points)
 
     print('boundary extents:', xil, xih, yil, yih)
@@ -469,83 +468,16 @@ def main(args):
         pix_y1 = ypix - half_frame
         pix_y2 = ypix + half_frame
 
-        # pix_l_t = (point[0] - half_frame, point[1] - half_frame)
-        # pix_l_b = (point[0] - half_frame, point[1] + half_frame)
-        # pix_r_t = (point[0] + half_frame, point[1] - half_frame)
-        # pix_r_b = (point[0] + half_frame, point[1] + half_frame)
-
         tile_x1 = int(xpix2tile(pix_x1, zoom_factor))
         tile_x2 = int(xpix2tile(pix_x2, zoom_factor))
         tile_y1 = int(xpix2tile(pix_y1, zoom_factor))
         tile_y2 = int(xpix2tile(pix_y2, zoom_factor))
-
-        # print('pix_x1:', pix_x1)
-        # print('pix_x2:', pix_x2)
-        # print('pix_y1:', pix_y1)
-        # print('pix_y2:', pix_y2)
-
-        # print('tile_x1:', tile_x1)
-        # print('tile_x2:', tile_x2)
-        # print('tile_y1:', tile_y1)
-        # print('tile_y2:', tile_y2)
 
         for xtile in range(tile_x1, tile_x2 + 1):
             for ytile in range(tile_y1, tile_y2 + 1):
                 tile_coords = (xtile, ytile)
                 if tile_coords not in all_tiles:
                     all_tiles.append(tile_coords)
-
-        # import pprint
-        # pprint.pprint(all_tiles)
-
-        # break
-        # xtile = xpix2tile(xpix, zoom_factor)
-        # ytile = ypix2tile(ypix, zoom_factor)
-        # tile_coords = (int(xtile), int(ytile))
-        # if tile_coords not in all_tiles:
-        #     print('New tile:', tile_coords)
-        #     all_tiles.append(tile_coords)
-
-    # print('array 0, 0')
-    # for point in offset_path_t_l:
-    #     xpix, ypix = point
-    #     xtile = xpix2tile(xpix, zoom_factor)
-    #     ytile = ypix2tile(ypix, zoom_factor)
-    #     tile_coords = (int(xtile), int(ytile))
-    #     if tile_coords not in all_tiles:
-    #         print('New tile:', tile_coords)
-    #         all_tiles.append(tile_coords)
-
-    # print('array 0, 1')
-    # for point in offset_path_b_l:
-    #     xpix, ypix = point
-    #     xtile = xpix2tile(xpix, zoom_factor)
-    #     ytile = ypix2tile(ypix, zoom_factor)
-    #     tile_coords = (int(xtile), int(ytile))
-    #     if tile_coords not in all_tiles:
-    #         print('New tile:', tile_coords)
-    #         all_tiles.append(tile_coords)
-
-    # print('array 1, 0')
-    # for point in offset_path_t_r:
-    #     xpix, ypix = point
-    #     xtile = xpix2tile(xpix, zoom_factor)
-    #     ytile = ypix2tile(ypix, zoom_factor)
-    #     tile_coords = (int(xtile), int(ytile))
-    #     if tile_coords not in all_tiles:
-    #         print('New tile:', tile_coords)
-    #         all_tiles.append(tile_coords)
-
-    # print('array 1, 1')
-    # for point in offset_path_b_r:
-    #     xpix, ypix = point
-    #     xtile = xpix2tile(xpix, zoom_factor)
-    #     ytile = ypix2tile(ypix, zoom_factor)
-    #     tile_coords = (int(xtile), int(ytile))
-    #     if tile_coords not in all_tiles:
-    #         print('New tile:', tile_coords)
-    #         all_tiles.append(tile_coords)
-
 
     print('len:', len(all_tiles))
 
@@ -574,16 +506,6 @@ def main(args):
     dr = ImageDraw.Draw(mosaic)
     dr.point(scaled_image_pixel_points, fill=color)
 
-    # x1 = pix_x1 - xpix_min
-    # x2 = pix_x2 - xpix_min
-    # y1 = pix_y1 - ypix_min
-    # y2 = pix_y2 - ypix_min
-
-    # dr.line([(x1, y1), (x1, y2)], fill=color, width=1)
-    # dr.line([(x1, y1), (x2, y1)], fill=color, width=1)
-    # dr.line([(x2, y2), (x1, y2)], fill=color, width=1)
-    # dr.line([(x2, y2), (x2, y1)], fill=color, width=1)
-
     mosaic.save(output_file)
 
     gps_metadata = {
@@ -595,233 +517,7 @@ def main(args):
     with open(output_metadata_file, 'w+') as fd:
         fd.write(json.dumps(gps_metadata))
 
-    sys.exit(0)
-
-
-    # xbgl, xbgh, ybgl, ybgh, scale_factor = get_expanded_boundary_geo_extents(xil, xih, yil, yih, zoom_factor, boundary_pixels, target_square_size)
-    # print('expanded boundary extents:', xbgl, xbgh, ybgl, ybgh)
-
-    # # x1 = xil
-    # # y1 = yil
-    # # x2 = xih
-    # # y2 = yih
-
-    # # Get the extent mapping of the track extents in scaled map factors
-    # xesl = min(xgeo2tile(xih, zoom_factor), xgeo2tile(xil, zoom_factor))     # x boundary scaled lo
-    # xesh = max(xgeo2tile(xih, zoom_factor), xgeo2tile(xil, zoom_factor))     # x boundary scaled hi
-    # yesl = min(ygeo2tile(yih, zoom_factor), ygeo2tile(yil, zoom_factor))     # y boundary scaled lo
-    # yesh = max(ygeo2tile(yih, zoom_factor), ygeo2tile(yil, zoom_factor))     # y boundary scaled hi
-
-    # # Get the mapping of boundary extent point in tile coords
-    # xbtl = min(xgeo2tile(xbgh, zoom_factor), xgeo2tile(xbgl, zoom_factor))     # x boundary scaled lo
-    # xbth = max(xgeo2tile(xbgh, zoom_factor), xgeo2tile(xbgl, zoom_factor))     # x boundary scaled hi
-    # ybtl = min(ygeo2tile(ybgh, zoom_factor), ygeo2tile(ybgl, zoom_factor))     # y boundary scaled lo
-    # ybth = max(ygeo2tile(ybgh, zoom_factor), ygeo2tile(ybgl, zoom_factor))     # y boundary scaled hi
-
-    # # Get the mapping of boundary extent point in pixel coords
-    # xbpl = min(xgeo2pix(xbgh, zoom_factor), xgeo2pix(xbgl, zoom_factor))     # x boundary scaled lo
-    # xbph = max(xgeo2pix(xbgh, zoom_factor), xgeo2pix(xbgl, zoom_factor))     # x boundary scaled hi
-    # ybpl = min(ygeo2pix(ybgh, zoom_factor), ygeo2pix(ybgl, zoom_factor))     # y boundary scaled lo
-    # ybph = max(ygeo2pix(ybgh, zoom_factor), ygeo2pix(ybgl, zoom_factor))     # y boundary scaled hi
-
-    # print('xbth:', xbth)
-    # print('xbtl:', xbtl)
-    # print('ybth:', ybth)
-    # print('ybtl:', ybtl)
-
-    # xbtl_i = int(xbtl)     # x tile lo
-    # xbth_i = int(xbth)     # x tile hi
-    # ybtl_i = int(ybtl)     # y tile lo
-    # ybth_i = int(ybth)     # y tile hi
-
-    # mapped_points = get_mapped_points_array(points, zoom_factor)
-
-    # file_map = {}
-
-    # for lon_tile in range(xbtl_i, xbth_i + 1):
-    #     for lat_tile in range(ybtl_i, ybth_i + 1):
-    #         key = (lon_tile, lat_tile)
-    #         print(lon_tile, lat_tile)
-    #         output_filename = tile_directory +'/' +'tile_%06d_%06d_%02d.png' % (lon_tile, lat_tile, zoom_factor)
-    #         file_map[key] = output_filename
-    #         tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
-
-    # print(file_map)
-
-    # for lon_tile in range(xbtl_i, xbth_i + 1):
-    #     for lat_tile in range(ybtl_i, ybth_i + 1):
-    #         key = (lon_tile, lat_tile)
-    #         print(lon_tile, lat_tile)
-    #         im = Image.open(file_map[key]).convert('RGB')
-    #         dr = ImageDraw.Draw(im)
-
-            # grid lines
-            # color = ImageColor.getrgb('brown')
-            # dr.line([(0, 0), (0, 255)], fill=color, width=1)
-            # dr.line([(0, 0), (255, 0)], fill=color, width=1)
-            # font = ImageFont.load_default()
-            # lon_deg_min = xtile2geo(lon_tile, zoom_factor)
-            # lat_deg_min = ytile2geo(lat_tile, zoom_factor)
-            # lon_deg_max = xtile2geo(lon_tile + 1, zoom_factor)
-            # lat_deg_max = ytile2geo(lat_tile + 1, zoom_factor)
-            # dr.text([(127, 10)], '%f' % lat_deg_min, font=font, fill=color)
-            # dr.text([(10, 127)], '%f' % lon_deg_min, font=font, fill=color)
-
-    #         color = ImageColor.getrgb('black')
-
-    #         if xbtl > lon_tile and xbtl < lon_tile + 1:
-    #             print('xbtl:', xbtl)
-    #             print('lon_tile:', lon_tile)
-    #             x_offset = (xbtl - math.floor(xbtl)) * 256
-    #             dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
-
-    #         if  ybtl > lat_tile and ybtl < lat_tile + 1:
-    #             print('ybtl:', ybtl)
-    #             print('lat_tile:', lat_tile)
-    #             y_offset = (ybtl - math.floor(ybtl)) * 256
-    #             dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
-
-    #         if xbth > lon_tile and xbth < lon_tile + 1:
-    #             print('xbth:', xbth)
-    #             print('lon_tile:', lon_tile)
-    #             x_offset = (xbth - math.floor(xbth)) * 256
-    #             dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
-
-    #         if ybth > lat_tile and ybth < lat_tile + 1:
-    #             print('ybth:', ybth)
-    #             print('lat_tile:', lat_tile)
-    #             y_offset = (ybth - math.floor(ybth)) * 256
-    #             dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
-
-    #         color = ImageColor.getrgb('red')
-
-    #         if xesl > lon_tile and xesl < lon_tile + 1:
-    #             print('xesl:', xesl)
-    #             print('lon_tile:', lon_tile)
-    #             x_offset = (xesl - math.floor(xesl)) * 256
-    #             dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
-
-    #         if  yesl > lat_tile and yesl < lat_tile + 1:
-    #             print('yesl:', yesl)
-    #             print('lat_tile:', lat_tile)
-    #             y_offset = (yesl - math.floor(yesl)) * 256
-    #             dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
-
-    #         if xesh > lon_tile and xesh < lon_tile + 1:
-    #             print('xesh:', xesh)
-    #             print('lon_tile:', lon_tile)
-    #             x_offset = (xesh - math.floor(xesh)) * 256
-    #             dr.line([(x_offset, 0), (x_offset, 255)], fill=color, width=1)
-
-    #         if yesh > lat_tile and yesh < lat_tile + 1:
-    #             print('yesh:', yesh)
-    #             print('lat_tile:', lat_tile)
-    #             y_offset = (yesh - math.floor(yesh)) * 256
-    #             dr.line([(0, y_offset), (255, y_offset)], fill=color, width=1)
-
-    #         # in_tile = in_tile_fn(lon_tile, lat_tile)
-    #         # tile_ll_points = list(filter(in_tile, mapped_points))
-    #         # tile_inter_points = list(map(lambda x: (int(divmod(x[0], 1)[1] * 256), int(divmod(x[1], 1)[1] * 256)), tile_ll_points))
-
-    #         # color = ImageColor.getrgb('blue')
-    #         # if len(tile_inter_points) > 0:
-    #         #     dr.point(tile_inter_points, fill=color)
-
-    #         im.save(file_map[key])
-
-    # print('xbtl_i:', xbtl_i)
-    # print('xbth_i:', xbth_i)
-    # print('ybtl_i:', ybtl_i)
-    # print('ybth_i:', ybth_i)
-
-    # im_full = None
-    # for lon_tile in range(xbtl_i, xbth_i + 1):
-    #     im_row = None
-    #     for lat_tile in range(ybtl_i, ybth_i + 1):
-    #         key = (lon_tile, lat_tile)
-    #         print(lon_tile, lat_tile)
-    #         if im_row is None:
-    #             im_row = Image.open(file_map[key]).convert('RGB')
-    #         else:
-    #             im_join = Image.open(file_map[key]).convert('RGB')
-    #             im_row = get_concat_v(im_row, im_join)
-
-    #     if im_full is None:
-    #         im_full = im_row
-    #     else:
-    #         im_full = get_concat_h(im_full, im_row)
-
-    # im_full.save(output_file + '.raw.png')
-
-    # orig_width, orig_height = im_full.size
-
-    # scaled_width, scaled_height = int(round(orig_width * scale_factor, 0)), int(round(orig_height * scale_factor, 0))
-
-    # im_full_resize = im_full.resize((scaled_width, scaled_height), Image.LANCZOS)
-    # im_full_resize.save(output_file)
-
-
-
-
-    # xbtl_i_pix = xtile2pix(xbtl_i, zoom_factor)
-    # ybtl_i_pix = ytile2pix(ybtl_i, zoom_factor)
-
-    # inter_image_xbpl = int((xbpl - xbtl_i_pix) * scale_factor)
-    # inter_image_xbph = int((xbph - xbtl_i_pix) * scale_factor)
-    # inter_image_ybpl = int((ybpl - ybtl_i_pix) * scale_factor)
-    # inter_image_ybph = int((ybph - ybtl_i_pix) * scale_factor)
-
-    # print('xbpl, xbph, ybpl, ybph:', xbpl, xbph, ybpl, ybph)
-
-    # xbpl_geo = xpix2geo(xbpl, zoom_factor)
-    # xbph_geo = xpix2geo(xbph, zoom_factor)
-    # ybpl_geo = ypix2geo(ybpl, zoom_factor)
-    # ybph_geo = ypix2geo(ybph, zoom_factor)
-
-    # print('xbpl_geo, xbph_geo, ybpl_geo, ybph_geo:', xbpl_geo, xbph_geo, ybpl_geo, ybph_geo)
-
-    # box = inter_image_xbpl, inter_image_ybpl, inter_image_xbph, inter_image_ybph
-    # print('im_full_resize.size:', im_full_resize.size)
-    # print('crop:', box)
-    # im_full_resize_crop = im_full_resize.crop(box)
-
-
-
-
-
-
-    # # pixel_points = mapped_to_pixel_points(mapped_points, xbtl_i, ybtl_i)
-    # # pixel_points_ts = mapped_to_pixel_points(mapped_points, xbtl_i, ybtl_i, with_ts=True)
-
-
-    # print('xbtl_i_pix, ybtl_i_pix:', xbtl_i_pix, ybtl_i_pix)
-    # print('xbtl_i_pix_geo, ybtl_i_pix_geo:', xpix2geo(xbtl_i_pix, zoom_factor), ypix2geo(ybtl_i_pix, zoom_factor))
-
-    # scaled_image_pixel_points = get_scaled_inter_image_pixel_points_array(points, zoom_factor, xbpl, ybpl, scale_factor)
-    # scaled_image_pixel_points_ts = get_scaled_inter_image_pixel_points_array(points, zoom_factor, xbpl, ybpl, scale_factor, with_ts=True)
-
-    # color = ImageColor.getrgb('blue')
-
-    # dr = ImageDraw.Draw(im_full_resize_crop)
-    # dr.point(scaled_image_pixel_points, fill=color)
-
-
-    # im_full_resize_crop.save(output_file + '.resize_crop.png')
-
-
-
-
-    # gps_metadata = {
-    #     'start_time': start_time,
-    #     'gps_points': scaled_image_pixel_points_ts
-    # }
-
-    # # dump pixel points
-    # with open(output_metadata_file, 'w+') as fd:
-    #     fd.write(json.dumps(gps_metadata))
-
-    # sh.open(output_file)
-    # sh.open(output_file + '.resize_crop.png')
+    return 0
 
 
 if __name__ == '__main__':
