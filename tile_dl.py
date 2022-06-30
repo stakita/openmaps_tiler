@@ -70,9 +70,6 @@ def main(args):
 
     coord = osm.Coordinate(lon_deg, lat_deg)
     tile = osm.coordinate_to_tile_point(coord, zoom)
-    print('tile:  ' + repr(tile))
-    pixel = osm.coordinate_to_pixel_point(coord, zoom)
-    print('pixel: ' + repr(pixel))
 
     x_tile = int(tile.x)
     y_tile = int(tile.y)
