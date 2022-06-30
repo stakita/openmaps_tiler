@@ -12,7 +12,6 @@ Options:
   --tile-cache=<directory>  Tile cache directory [default: tiles].
 '''
 import math
-import tile_dl
 import json
 import sh
 import sys
@@ -20,17 +19,16 @@ import pprint
 import os
 
 try:
+    from docopt import docopt
     from PIL import Image
     from PIL import ImageDraw, ImageColor, ImageFont
 except ImportError as e:
-    sys.stderr.write('Error: %s\nTry:\n    pip install --user Pillow\n' % e)
+    installs = ['docopt', 'Pillow']
+    sys.stderr.write('Error: %s\nTry:\n    pip install --user %s\n' % (e, ' '.join(installs)))
     sys.exit(1)
 
-try:
-    from docopt import docopt
-except ImportError as e:
-    sys.stderr.write('Error: %s\nTry:\n    pip install --user docopt\n' % e)
-    sys.exit(1)
+from lib import openstreetmaps as osm
+
 
 def zoom_tile_angle(zoom):
     print('zoom_tile_angle:', zoom)
@@ -554,12 +552,11 @@ def main(args):
     file_map = {}
 
     for tile_coords in all_tiles:
-        lon_tile, lat_tile = tile_coords
-        print(lon_tile, lat_tile)
-        output_filename = tile_directory +'/' +'tile_%06d_%06d_%02d.png' % (lon_tile, lat_tile, zoom_factor)
+        tile = osm.TilePoint(tile_coords[1], tile_coords[0], zoom_factor)
+        output_filename = tile_directory +'/' +'tile_%06d_%06d_%02d.png' % (tile.x, tile.y, tile.zoom)
         file_map[tile_coords] = output_filename
         if not os.path.exists(output_filename):
-            tile_dl.get_tile(lat_tile, lon_tile, zoom_factor, output_filename)
+            osm.download_tile(tile, output_filename)
 
     mosaic, xtile_min, ytile_min = build_mosaic_image(file_map)
 
