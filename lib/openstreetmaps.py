@@ -87,7 +87,7 @@ def pixel_point_to_tile_pointt(pixel_point):
     return pixel
 
 
-def tile_instance(tile_point):
+def tile_reference(tile_point):
     ''' Truncate a TilePoint object fields (possilby floats) to tile reference values (floor integers). '''
     tile_ref = TilePoint(int(tile_point.x), int(tile_point.y), int(tile_point.zoom))
     return tile_ref    
@@ -100,7 +100,7 @@ def get_tile(lat_tile, lon_tile, zoom, output_filename):
 
 def download_tile(tile_point, output_filename):
     # Truncate to integer tile coordinates
-    tile_ref = tile_instance(tile_point)
+    tile_ref = tile_reference(tile_point)
     lon_tile = tile_ref.x
     lat_tile = tile_ref.y
     zoom = tile_ref.zoom

@@ -48,7 +48,7 @@ def markup_tile(tile_point, tile_filename, markup_filename, color='blue'):
 
     pixel_point = osm.tile_point_to_pixel_point(tile_point)
 
-    tile_zero_point = osm.tile_instance(tile_point)
+    tile_zero_point = osm.tile_reference(tile_point)
     pixel_zero_ref = osm.tile_point_to_pixel_point(tile_zero_point)
 
     x_offset = pixel_point.x - pixel_zero_ref.x
@@ -70,6 +70,9 @@ def main(args):
 
     coord = osm.Coordinate(lon_deg, lat_deg)
     tile = osm.coordinate_to_tile_point(coord, zoom)
+    print('tile:  ' + repr(tile))
+    pixel = osm.coordinate_to_pixel_point(coord, zoom)
+    print('pixel: ' + repr(pixel))
 
     x_tile = int(tile.x)
     y_tile = int(tile.y)
