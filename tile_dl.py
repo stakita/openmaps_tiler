@@ -34,8 +34,7 @@ except ImportError as e:
     sys.exit(1)
 
 
-logging.basicConfig(level=logging.INFO,
-                    format='(%(threadName)-10s) %(message)-s')
+log = logging.getLogger(__name__)
 
 
 def markup_tile(tile_point, tile_filename, markup_filename, color='blue'):

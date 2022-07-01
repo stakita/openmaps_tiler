@@ -11,8 +11,6 @@ except ImportError as e:
     sys.stderr.write('Error: %s\nTry:\n    pip install --user %s\n' % (e, ' '.join(installs)))
     sys.exit(1)
 
-logging.basicConfig(level=logging.INFO,
-                    format='(%(threadName)-10s) %(message)-s')
 log = logging.getLogger(__name__)
 
 
