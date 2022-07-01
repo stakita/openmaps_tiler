@@ -79,7 +79,7 @@ def tile_point_to_pixel_point(tile_point):
     return pixel
 
 
-def pixel_point_to_tile_pointt(pixel_point):
+def pixel_point_to_tile_point(pixel_point):
     ''' Convert 'TilePoint' to 'Coordinate' '''
     coordinate = pixel_point_to_coordinate(pixel_point)
     pixel = coordinate_to_tile_point(coordinate, pixel_point.zoom)
@@ -93,11 +93,6 @@ def tile_reference(tile_point):
     return tile_ref    
 
 
-def get_tile(lat_tile, lon_tile, zoom, output_filename):
-    logging.debug('run curl ' + ' '.join(['https://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, lon_tile, lat_tile), '--output', output_filename]))
-    sh.curl('https://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, lon_tile, lat_tile), '--output', output_filename) # pylint: disable=E1101
-
-
 def download_tile(tile_point, output_filename):
     # Truncate to integer tile coordinates
     tile_ref = tile_reference(tile_point)
@@ -108,28 +103,11 @@ def download_tile(tile_point, output_filename):
     sh.curl('https://tile.openstreetmap.org/%d/%d/%d.png' % (zoom, lon_tile, lat_tile), '--output', output_filename) # pylint: disable=E1101
 
 
-def _scale_lat_to_zoom(lat_deg, zoom):
-    ''' Scaling of lattitude value to tile coordinate based on zoom '''
-    n = 2.0 ** zoom
-    lat_rad = math.radians(lat_deg)
-    lat_scale_float = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n
-
-    return lat_scale_float
-
-
-def _scale_lon_to_zoom(lon_deg, zoom):
-    ''' Scaling of longitude value to tile coordinate based on zoom '''
-    n = 2.0 ** zoom
-    long_scale_float = (lon_deg + 180.0) / 360.0 * n
-
-    return long_scale_float
-
-
 # Coordinate to tile scale conversions
 
 def _coordinate_lon_to_tile_x(lon_deg, zoom):
     if lon_deg > 180 or lon_deg < -180:
-        raise ConversionException('Degres beyond conversion range: %f' % lon_deg)
+        raise ConversionException('Degrees beyond conversion range: %f' % lon_deg)
     n = 2.0 ** zoom
     xfloat = (lon_deg + 180.0) / 360.0 * n
 
@@ -138,7 +116,7 @@ def _coordinate_lon_to_tile_x(lon_deg, zoom):
 
 def _coordinate_lat_to_tile_y(lat_deg, zoom):
     if lat_deg > 85.05113 or lat_deg < -85.05113:
-        raise ConversionException('Degres beyond conversion range: %f' % lat_deg)
+        raise ConversionException('Degrees beyond conversion range: %f' % lat_deg)
     n = 2.0 ** zoom
     lat_rad = math.radians(lat_deg)
     yfloat = (1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n

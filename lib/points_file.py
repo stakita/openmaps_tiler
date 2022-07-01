@@ -3,6 +3,7 @@ import dateutil.parser as dup
 
 
 def load(filename):
+    ''' Load GPS data json file and return the data with the start time reference of the first point '''
     with open(filename) as fd:
         body = fd.read()
     gps_data = json.loads(body)
