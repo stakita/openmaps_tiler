@@ -3,7 +3,7 @@
 create_overview_video.py - Create track overview video from GPX data
 
 Usage:
-  zoom.py <gpx-data> [--output=<filename>] [--tile-cache=<directory>] [--grid-lines]
+  create_overview_video.py <gpx-data> [--output=<filename>] [--tile-cache=<directory>] [--grid-lines]
 
 Options:
   -h --help                 Show this screen.
