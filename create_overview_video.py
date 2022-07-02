@@ -83,6 +83,7 @@ def calculate_adjusted_boundary_extents(boundary_extents, zoom_factor, margin_px
 
 
 def generate_base_background_image(boundary_coord_extents, track_extents, zoom, tile_directory, draw_grid=False):
+    ''' Generate base background image and reference pixel point for image corner '''
     # Download all tiles coverying boundary area
 
     tile_extents = boundary_coord_extents.to_tile_extents(zoom)
@@ -186,7 +187,23 @@ def generate_base_background_image(boundary_coord_extents, track_extents, zoom, 
 
     # output_file = 'bozo'
     # im_full.save(output_file + '.raw.png')
-    return im_full
+
+    return im_full, tile_ref_lo
+
+
+def generate_image_track_pixel_coordinates(image_tile_ref, zoom, gpx_track_points):
+    image_pixel_ref = osm.tile_point_to_pixel_point(image_tile_ref)
+    track_pixel_points = map(lambda p: osm.coordinate_to_pixel_point(osm.Coordinate(p['lon'], p['lat']), zoom), gpx_track_points)
+    image_track_pixel_coords = list(map(lambda q: (q.x - image_pixel_ref.x, q.y - image_pixel_ref.y), track_pixel_points))
+    return image_track_pixel_coords
+
+
+def draw_track_points(im_background, image_pixel_coords):
+    color = ImageColor.getrgb('blue')
+    dr = ImageDraw.Draw(im_background)
+    dr.point(image_pixel_coords, fill=color)
+
+    return im_background
 
 
 def main(args):
@@ -216,18 +233,16 @@ def main(args):
     print('adjusted boundary extents: %r' % adjusted_boundary_extents)
 
     # Generate base background image
-    generate_base_background_image(adjusted_boundary_extents, track_extents, zoom, tile_directory, grid_lines)
-
-    # Generate background image
-        # Get track bounding points
-        # Determine best zoom factor based on bounding expansion
-        # Get expanded coordinate bounds
-        # Download tiles in range
-        # Stitch to single output image
-        # Return image and pixel conversion parameters
+    im_background, image_tile_ref = generate_base_background_image(adjusted_boundary_extents, track_extents, zoom, tile_directory, grid_lines)
 
     # Draw track points (image, points)
-        # Draw points
+    image_track_pixel_coords = generate_image_track_pixel_coordinates(image_tile_ref, zoom, gpx_data.all_points())
+    im_background = draw_track_points(im_background, image_track_pixel_coords)
+
+    im_background.save(output_file + '.resize_crop.png')
+
+    # Scale image to final dimensions
+
 
     # Generate video
         # Load background image
