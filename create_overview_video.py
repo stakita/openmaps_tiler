@@ -21,6 +21,8 @@ import sys
 import logging
 import os
 import math
+import copy
+import shutil
 
 from lib import openstreetmaps as osm
 from lib import gpx
@@ -30,8 +32,9 @@ try:
     from docopt import docopt
     from PIL import Image
     from PIL import ImageDraw, ImageColor, ImageFont
+    from cv2 import cv2
 except ImportError as e:
-    installs = ['docopt', 'Pillow']
+    installs = ['docopt', 'Pillow', 'opencv-python']
     sys.stderr.write('Error: %s\nTry:\n    pip install --user %s\n' % (e, ' '.join(installs)))
     sys.exit(1)
 
@@ -191,10 +194,21 @@ def generate_base_background_image(boundary_coord_extents, track_extents, zoom, 
     return im_full, osm.tile_point_to_pixel_point(tile_ref_lo)
 
 
-def generate_image_track_pixel_coordinates(image_pixel_ref, zoom, gpx_track_points):
+def generate_image_track_pixel_coordinates(image_pixel_ref, zoom, gpx_track_points, scale_factor=1.0):
     track_pixel_points = map(lambda p: osm.coordinate_to_pixel_point(osm.Coordinate(p['lon'], p['lat']), zoom), gpx_track_points)
-    image_track_pixel_coords = list(map(lambda q: (q.x - image_pixel_ref.x, q.y - image_pixel_ref.y), track_pixel_points))
+    image_track_pixel_coords = list(map(lambda q: ((q.x - image_pixel_ref.x) * scale_factor, (q.y - image_pixel_ref.y) * scale_factor), track_pixel_points))
     return image_track_pixel_coords
+
+
+def generate_scaled_track_pixel_points_with_timestamp(image_pixel_ref, zoom, gpx_track_points, scale_factor=1.0):
+    track_points = []
+    for gpx_point in gpx_track_points:
+        p = osm.coordinate_to_pixel_point(osm.Coordinate(gpx_point['lon'], gpx_point['lat']), zoom)
+        timestamp  = gpx_point['time']
+        image_offset_pixel_point = (p.x - image_pixel_ref.x) * scale_factor, (p.y - image_pixel_ref.y) * scale_factor, timestamp
+        track_points.append(image_offset_pixel_point)
+
+    return track_points
 
 
 def draw_track_points(im_background, image_pixel_coords):
@@ -203,6 +217,72 @@ def draw_track_points(im_background, image_pixel_coords):
     dr.point(image_pixel_coords, fill=color)
 
     return im_background
+
+
+def generate_map_video(background_image, track_points, output_file, fps=25): #, tstart, tfinish):
+    image = cv2.imread(background_image)
+    height, width, _ = image.shape
+    print(height, width)
+
+    start_time = track_points[0][2]
+    finish_time =  track_points[-1][2]
+
+    print(start_time)
+    print(finish_time)
+    total_seconds = finish_time - start_time
+    print(total_seconds)
+
+    frame_start = 0
+    frame_finish = int(total_seconds * fps)
+    frames = int(total_seconds * fps)
+
+    print('frame_start: ', frame_start, frame_start / fps)
+    print('frame_finish:', frame_finish, frame_finish / fps)
+
+    color = (40, 40, 255)
+    thickness = 3
+
+    fourcc = cv2.VideoWriter_fourcc(*'H264')
+    video = cv2.VideoWriter(output_file, fourcc, float(fps), (width, height))
+
+    xpos = int(round(track_points[0][0], 0))
+    ypos = int(round(track_points[0][1], 0))
+    tpos = track_points[0][2] - start_time
+    tpos_last = tpos
+    tpos_adj = tpos
+
+    xlast = xpos
+    ylast = ypos
+
+    for frame in range(frame_start, frame_finish):
+        update_period = 1000
+        if frame % update_period == 0:
+            print('%3.2f %d %d' % (frame / fps, frame, frames))
+
+        current_time = frame / fps
+
+        while tpos_adj < current_time and len(track_points) > 0:
+            point = track_points.pop(0)
+            xpos = point[0]
+            ypos = point[1]
+            xpos = int(round(point[0], 0))
+            ypos = int(round(point[1], 0))
+            tpos = point[2] - start_time
+            if tpos == tpos_last:
+                tpos_adj += 1/18
+            else:
+                tpos_last = tpos
+                tpos_adj = tpos
+
+            xlast = xpos
+            ylast = ypos
+
+        frame = copy.copy(image)
+
+        cv2.circle(frame, (xlast, ylast), 15, color, thickness)
+        video.write(frame)
+
+    video.release()
 
 
 def main(args):
@@ -214,6 +294,9 @@ def main(args):
     margin_pixels = 10
     pixels_x = 1022
     pixels_y = 1022
+
+    background_file = output_file + '.background.png'
+    output_temp_file = output_file + '_'
 
     log.info('gpx_filename: %s' % gpx_filename)
     log.info('output_file:  %s' % output_file)
@@ -229,7 +312,8 @@ def main(args):
 
     # Calculate expanded aboundary extents
     adjusted_boundary_coord_extents, final_scale_factor = calculate_adjusted_boundary_extents(boundary_coord_extents, zoom, margin_pixels, pixels_x, pixels_y)
-    print('adjusted boundary extents: %r' % adjusted_boundary_coord_extents)
+
+    print('final_scale_factor: %r' % final_scale_factor)
 
     # Generate base background image
     im_full, image_pixel_ref = generate_base_background_image(adjusted_boundary_coord_extents, track_extents, zoom, tile_directory, grid_lines)
@@ -237,8 +321,6 @@ def main(args):
     # Draw track points (image, points)
     image_track_pixel_coords = generate_image_track_pixel_coordinates(image_pixel_ref, zoom, gpx_data.all_points())
     im_full = draw_track_points(im_full, image_track_pixel_coords)
-
-    im_full.save(output_file + '.resize_crop.png')
 
     # Scale and crop image to final dimensions
     boundary_pixel_extents = adjusted_boundary_coord_extents.to_pixel_extents(zoom)
@@ -251,12 +333,16 @@ def main(args):
     im_full_crop = im_full.crop(crop_box)
 
     im_full_resize = im_full_crop.resize((pixels_x, pixels_y), Image.Resampling.LANCZOS)
+    im_full_resize.save(background_file)
 
     # Generate video
-        # Load background image
+    track_timestamp_pixel_points = generate_scaled_track_pixel_points_with_timestamp(boundary_pixel_extents.lo(), zoom, gpx_data.all_points(), final_scale_factor)
+    import pprint
+    pprint.pprint(track_timestamp_pixel_points)
+    generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file) #, fps, tstart, tfinish)
 
-
-
+    # Copy over temp file to final filename
+    shutil.move(output_temp_file, output_file)
 
 if __name__ == '__main__':
     arguments = docopt(__doc__)
