@@ -62,3 +62,6 @@ if __name__ == '__main__':
     points_iter = g.all_points()
     log.info(next(points_iter))
     log.info(next(points_iter))
+
+
+# TODO: consider returning points as osm.Coordinate type
