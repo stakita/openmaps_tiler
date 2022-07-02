@@ -1,7 +1,17 @@
+import sys
 from collections import namedtuple
 import logging
 
 from lib import openstreetmaps as osm  # pylint: disable=E0401
+
+try:
+    from PIL import Image
+    # from PIL import ImageDraw, ImageColor, ImageFont
+except ImportError as e:
+    installs = ['Pillow']
+    sys.stderr.write('Error: %s\nTry:\n    pip install --user %s\n' % (e, ' '.join(installs)))
+    sys.exit(1)
+
 
 logging.basicConfig(level=logging.INFO,
                     format='(%(threadName)-10s) %(message)-s')
@@ -124,8 +134,8 @@ class PixelExtents:
 
 
     def to_coordinate_extents(self, zoom):
-        coordinate1 = osm.pixel_point_to_coordinate(self._hi, zoom)
-        coordinate2 = osm.pixel_point_to_coordinate(self._lo, zoom)
+        coordinate1 = osm.pixel_point_to_coordinate(self._hi)
+        coordinate2 = osm.pixel_point_to_coordinate(self._lo)
         return CoordinateExtents(coordinate1, coordinate2)
 
 
@@ -189,4 +199,19 @@ def maximize_zoom(track_extents, output_x_px, output_y_px, boundary_pixels=20, z
     boundary_extents = CoordinateExtents(coordinate_boundary_lo, coordinate_boundary_hi)
 
     return zoom_target, boundary_extents
+
+
+def join_images_horizontal(im1, im2):
+    dst = Image.new('RGB', (im1.width + im2.width, im1.height))
+    dst.paste(im1, (0, 0))
+    dst.paste(im2, (im1.width, 0))
+    return dst
+
+
+def join_images_vertical(im1, im2):
+    dst = Image.new('RGB', (im1.width, im1.height + im2.height))
+    dst.paste(im1, (0, 0))
+    dst.paste(im2, (0, im1.height))
+    return dst
+
 
