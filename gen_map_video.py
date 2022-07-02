@@ -21,7 +21,7 @@ from lib import points_file
 
 try:
     from docopt import docopt
-    import cv2
+    from cv2 import cv2
 except ImportError as e:
     installs = ['docopt', 'opencv-python']
     sys.stderr.write('Error: %s\nTry:\n    pip install --user %s\n' % (e, ' '.join(installs)))
