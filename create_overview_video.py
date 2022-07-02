@@ -188,11 +188,10 @@ def generate_base_background_image(boundary_coord_extents, track_extents, zoom, 
     # output_file = 'bozo'
     # im_full.save(output_file + '.raw.png')
 
-    return im_full, tile_ref_lo
+    return im_full, osm.tile_point_to_pixel_point(tile_ref_lo)
 
 
-def generate_image_track_pixel_coordinates(image_tile_ref, zoom, gpx_track_points):
-    image_pixel_ref = osm.tile_point_to_pixel_point(image_tile_ref)
+def generate_image_track_pixel_coordinates(image_pixel_ref, zoom, gpx_track_points):
     track_pixel_points = map(lambda p: osm.coordinate_to_pixel_point(osm.Coordinate(p['lon'], p['lat']), zoom), gpx_track_points)
     image_track_pixel_coords = list(map(lambda q: (q.x - image_pixel_ref.x, q.y - image_pixel_ref.y), track_pixel_points))
     return image_track_pixel_coords
@@ -226,23 +225,32 @@ def main(args):
 
     # Calculate best zoom factor
     track_extents = utils.get_track_geo_extents(gpx_data.all_points())
-    zoom, boundary_extents = utils.maximize_zoom(track_extents, pixels_x, pixels_y, margin_pixels)
+    zoom, boundary_coord_extents = utils.maximize_zoom(track_extents, pixels_x, pixels_y, margin_pixels)
 
     # Calculate expanded aboundary extents
-    adjusted_boundary_extents, final_scale_factor = calculate_adjusted_boundary_extents(boundary_extents, zoom, margin_pixels, pixels_x, pixels_y)
-    print('adjusted boundary extents: %r' % adjusted_boundary_extents)
+    adjusted_boundary_coord_extents, final_scale_factor = calculate_adjusted_boundary_extents(boundary_coord_extents, zoom, margin_pixels, pixels_x, pixels_y)
+    print('adjusted boundary extents: %r' % adjusted_boundary_coord_extents)
 
     # Generate base background image
-    im_background, image_tile_ref = generate_base_background_image(adjusted_boundary_extents, track_extents, zoom, tile_directory, grid_lines)
+    im_full, image_pixel_ref = generate_base_background_image(adjusted_boundary_coord_extents, track_extents, zoom, tile_directory, grid_lines)
 
     # Draw track points (image, points)
-    image_track_pixel_coords = generate_image_track_pixel_coordinates(image_tile_ref, zoom, gpx_data.all_points())
-    im_background = draw_track_points(im_background, image_track_pixel_coords)
+    image_track_pixel_coords = generate_image_track_pixel_coordinates(image_pixel_ref, zoom, gpx_data.all_points())
+    im_full = draw_track_points(im_full, image_track_pixel_coords)
 
-    im_background.save(output_file + '.resize_crop.png')
+    im_full.save(output_file + '.resize_crop.png')
 
-    # Scale image to final dimensions
+    # Scale and crop image to final dimensions
+    boundary_pixel_extents = adjusted_boundary_coord_extents.to_pixel_extents(zoom)
+    crop_box = [
+        boundary_pixel_extents.lo().x - image_pixel_ref.x,
+        boundary_pixel_extents.lo().y - image_pixel_ref.y,
+        boundary_pixel_extents.hi().x - image_pixel_ref.x,
+        boundary_pixel_extents.hi().y - image_pixel_ref.y,
+    ]
+    im_full_crop = im_full.crop(crop_box)
 
+    im_full_resize = im_full_crop.resize((pixels_x, pixels_y), Image.Resampling.LANCZOS)
 
     # Generate video
         # Load background image
