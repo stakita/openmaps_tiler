@@ -47,7 +47,40 @@ def calculate_best_zoom_factor(points_iter, margin_px, output_x_px, output_y_px)
     return zoom, boundary_extents
 
 
-def generate_base_background_image(boundary_coord_extents, zoom, tile_directory):
+def calculate_adjusted_boundary_extents(boundary_extents, zoom_factor, margin_px, output_x_px, output_y_px):
+    ''' Calculate boundary coordinates and scaling factor to match output video dimensions '''
+    pixel_extents = boundary_extents.to_pixel_extents(zoom_factor)
+
+    track_size_x_px = pixel_extents.hi().x - pixel_extents.lo().x
+    track_size_y_px = pixel_extents.hi().y - pixel_extents.lo().y
+
+    track_center_x_px = (pixel_extents.hi().x + pixel_extents.lo().x) / 2
+    track_center_y_px = (pixel_extents.hi().y + pixel_extents.lo().y) / 2
+
+    scale_x = (output_x_px - (2 * margin_px)) / track_size_x_px
+    scale_y = (output_y_px - (2 * margin_px)) / track_size_y_px
+
+    log.info('scale_x: %f' % scale_x)
+    log.info('scale_y: %f' % scale_y)
+
+    scale_factor = min(scale_x, scale_y)
+
+    log.info('scale_factor: %f' % scale_factor)
+
+    boundary_x_px_lo = track_center_x_px - (output_x_px / 2) / scale_factor
+    boundary_x_px_hi = track_center_x_px + (output_x_px / 2) / scale_factor
+    boundary_y_px_lo = track_center_y_px - (output_y_px / 2) / scale_factor
+    boundary_y_px_hi = track_center_y_px + (output_y_px / 2) / scale_factor
+
+    pixel_lo = osm.PixelPoint(boundary_x_px_lo, boundary_y_px_lo, zoom_factor)
+    pixel_hi = osm.PixelPoint(boundary_x_px_hi, boundary_y_px_hi, zoom_factor)
+
+    adjusted_pixel_extents = utils.PixelExtents(pixel_lo, pixel_hi)
+
+    return adjusted_pixel_extents.to_coordinate_extents(zoom_factor), scale_factor
+
+
+def generate_base_background_image(boundary_coord_extents, track_extents, zoom, tile_directory):
     # Download all tiles coverying boundary area
 
     tile_extents = boundary_coord_extents.to_tile_extents(zoom)
