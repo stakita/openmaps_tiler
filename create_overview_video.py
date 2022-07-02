@@ -19,6 +19,7 @@ Options:
 import sys
 import logging
 import os
+import math
 
 from lib import openstreetmaps as osm
 from lib import gpx
@@ -228,10 +229,15 @@ def main(args):
     gpx_data = gpx.Gpx(gpx_raw)
 
     # Calculate best zoom factor
-    zoom, boundary_extents = calculate_best_zoom_factor(gpx_data.all_points(), margin_pixels, pixels_x, pixels_y)
+    track_extents = utils.get_track_geo_extents(gpx_data.all_points())
+    zoom, boundary_extents = utils.maximize_zoom(track_extents, pixels_x, pixels_y, margin_pixels)
+
+    # Calculate expanded aboundary extents
+    adjusted_boundary_extents, scale_factor = calculate_adjusted_boundary_extents(boundary_extents, zoom, margin_pixels, pixels_x, pixels_y)
+    print('adjusted boundary extents: %r' % adjusted_boundary_extents)
 
     # Generate base background image
-    generate_base_background_image(boundary_extents, zoom, tile_directory)
+    generate_base_background_image(adjusted_boundary_extents, track_extents, zoom, tile_directory)
 
     # Generate background image
         # Get track bounding points
