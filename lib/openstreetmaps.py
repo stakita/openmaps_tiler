@@ -91,6 +91,16 @@ def tile_reference(tile_point):
     return tile_ref    
 
 
+def pixel_point_round(pixel_point):
+    ''' Round pixel point to integer values '''
+    pixel_round = PixelPoint(
+        int(round(pixel_point.x, 0)),
+        int(round(pixel_point.y, 0)),
+        pixel_point.zoom
+    )
+    return pixel_round
+
+
 def download_tile(tile_point, output_filename):
     # Truncate to integer tile coordinates
     tile_ref = tile_reference(tile_point)
