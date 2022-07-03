@@ -23,7 +23,7 @@ This tool takes a gpx file and generates a chase video which is a view where the
 
 The general process for generating the chase video is as follows:
 
-1. **Pre calculations:** calculate viewport span values based on output video dimensions and zoom factor
+1. **Setup:** calculate viewport span values based on output video dimensions and zoom factor, load GPX data
 
 2. **Download tiles:** download all tiles relevant for rendering all chase frames for the track
 
@@ -31,7 +31,7 @@ The general process for generating the chase video is as follows:
 
 4. **Compose video:** compose video frame by frame based on the location point and time data
 
-#### 1. Pre calculations
+#### 1. Setup
 
 The following parameters are supplied for a given run:
 
@@ -40,6 +40,10 @@ The following parameters are supplied for a given run:
 * viewport dimensions for output video in pixels (x and y)
 
 Given that zoom is fixed, and the viewport dimensions in pixels are supplied, it is a fixed ratio of pixels and therefore tiles to cover the viewport. With a given point, all relevant tiles can be calculated to determine the span of tiles for rendering the viewport based on the current location position.
+
+This offset must be retained in pixels to be valid.
+
+GPX data needs to be loaded.
 
 #### 2. Download tiles
 
