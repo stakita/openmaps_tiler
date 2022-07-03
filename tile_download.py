@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 '''
-tile_dl.py - Tile downloader
+tile_download.py - Tile downloader
 
 Given a lat, long, zoom-factor, will download tile from openstreetmaps.org at the given zoom factor that contains the given location.
 
 Usage:
-  tile_dl.py --lat=<latitude> --long=<longitude> --zoom=<zoom> [--mark-loc]
+  tile_download.py --lat=<latitude> --long=<longitude> --zoom=<zoom> [--mark-loc]
 
 Options:
   -h --help             Show this screen.
