@@ -337,8 +337,6 @@ def main(args):
 
     # Generate video
     track_timestamp_pixel_points = generate_scaled_track_pixel_points_with_timestamp(boundary_pixel_extents.lo(), zoom, gpx_data.all_points(), final_scale_factor)
-    import pprint
-    pprint.pprint(track_timestamp_pixel_points)
     generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file) #, fps, tstart, tfinish)
 
     # Copy over temp file to final filename
