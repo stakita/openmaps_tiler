@@ -3,6 +3,8 @@ import logging
 import json
 import dateutil.parser as dup
 
+from lib import openstreetmaps as osm
+
 try:
     from docopt import docopt
     import xmltodict
@@ -17,6 +19,14 @@ log = logging.getLogger(__name__)
 def to_timestamp(time_string):
     dt = dup.parse(time_string)
     return dt.timestamp()
+
+
+def gpx_points_to_coordinates(gpx_points):
+    return map(lambda p: osm.Coordinate(p['lon'], p['lat']), gpx_points)
+
+
+def gpx_points_to_coordinate_timestamp_tuples(gpx_points):
+    return map(lambda p: (osm.Coordinate(p['lon'], p['lat']), p['time']), gpx_points)
 
 
 class Gpx:
