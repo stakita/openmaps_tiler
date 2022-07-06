@@ -10,6 +10,20 @@ Map data is obtained from [OpenStreetMap](https://en.wikipedia.org/wiki/OpenStre
 
 This repository contains two main scripts for generating these views as well as supporting modules to achieve this.
 
+## Installation
+
+Installation by pip to user enviroment (***repository is currently private***):
+
+```
+pip install --user git+ssh://git@github.com/stakita/openmaps_tiler
+```
+
+Installation by pip from github:
+
+```
+pip install --user git+https://github.com/stakita/openmaps_tiler
+```
+
 ## Data Types
 
 To use Open Street Map tiles, we need to convert between 3 representations of geolocation data:
