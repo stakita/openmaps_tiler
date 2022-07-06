@@ -21,6 +21,7 @@ import os
 import time
 import logging
 from collections import namedtuple
+
 from lib import openstreetmaps as osm
 
 try:

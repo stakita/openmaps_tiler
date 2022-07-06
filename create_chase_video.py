@@ -27,6 +27,8 @@ import copy
 import shutil
 from collections import namedtuple
 
+logging.basicConfig(level=logging.INFO, format='(%(threadName)-10s) %(message)-s')
+
 from lib import openstreetmaps as osm
 from lib import gpx
 from lib import utils
@@ -44,7 +46,6 @@ except ImportError as e:
 
 
 ViewportOffsets = namedtuple('Coordinate', 'x_lo y_lo x_hi y_hi')
-
 
 log = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ def download_tiles(gpx_data, zoom_factor, viewport_offsets, tile_directory):
                 if not os.path.exists(output_filename):
                     osm.download_tile(tile, output_filename)
 
-    log.info('file_map: %r' % file_map)
+    log.debug('file_map: %r' % file_map)
 
 
 def get_tiles_in_viewport(pixel_point, viewport_offsets):
@@ -111,7 +112,7 @@ def annotate_tiles(gpx_data, zoom_factor, tile_directory):
         if tile_ref not in tile_set:
             tile_set[tile_ref] = []
 
-    print('tile_set: %r' % tile_set)
+    log.debug('tile_set: %r' % tile_set)
 
     # Collect all points from the track contained in that tile
     for tile in tile_set:
@@ -122,18 +123,14 @@ def annotate_tiles(gpx_data, zoom_factor, tile_directory):
                 if location_pixel not in tile_set[tile]:
                     tile_set[tile].append(location_pixel)
 
-    # print('tile_set:')
-    import pprint
-    pprint.pprint(tile_set)
-
     # Process each tile drawing contained points onto tile
     for tile in tile_set:
-        print('processing tile: %s' % repr(tile))
+        log.debug('processing tile: %s' % repr(tile))
         tile_pixel_ref = osm.tile_point_to_pixel_point(tile)
         image_track_pixel_coords = list(map(lambda q: ((q.x - tile_pixel_ref.x), (q.y - tile_pixel_ref.y)), tile_set[tile]))
         tile_filename = get_tile_path(tile, tile_directory)
 
-        print('image_track_pixel_coords: %r' % image_track_pixel_coords)
+        log.debug('image_track_pixel_coords: %r' % image_track_pixel_coords)
 
         im_tile = Image.open(tile_filename).convert('RGB')
         draw_track_points(im_tile, image_track_pixel_coords)
@@ -161,22 +158,22 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
     start_time = track_pixel_ts_pairs[0][1]
     finish_time = track_pixel_ts_pairs[-1][1]
 
-    print(start_time)
-    print(finish_time)
+    log.info(start_time)
+    log.info(finish_time)
     total_seconds = finish_time - start_time
-    print(total_seconds)
+    log.info(total_seconds)
 
     frame_start = 0
     frame_finish = int(total_seconds * fps)
     frames = int(total_seconds * fps)
 
-    print('frame_start: ', frame_start, frame_start / fps)
-    print('frame_finish:', frame_finish, frame_finish / fps)
+    log.info('frame_start: %d %f' % (frame_start, frame_start / fps))
+    log.info('frame_finish: %d %f' % (frame_finish, frame_finish / fps))
 
     color = (40, 40, 255)
     thickness = 3
 
-    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video = cv2.VideoWriter(output_file, fourcc, float(fps), (pixels_x, pixels_y))
 
     # xpos = int(round(track_points[0][0], 0))
@@ -193,7 +190,7 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
     for frame in range(frame_start, frame_finish):
         update_period = 1000
         if frame % update_period == 0:
-            print('%3.2f %d %d' % (frame / fps, frame, frames))
+            log.info('%3.2f %d %d' % (frame / fps, frame, frames))
 
         # Determine the time corresponding to the frame
         current_time = frame / fps
@@ -225,15 +222,13 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
 
 def build_image(pixel_position, viewport_offsets, pixels_x, pixels_y, tile_directory):
     viewport_tiles = get_tiles_in_viewport(pixel_position, viewport_offsets)
-    # print('viewport_tiles: ' + repr(viewport_tiles))
-    # print('pixel_position: ' + repr(pixel_position))
-    # print('coord: ' + repr(osm.pixel_point_to_coordinate(pixel_position)))
+    log.debug('viewport_tiles: ' + repr(viewport_tiles))
+    log.debug('pixel_position: ' + repr(pixel_position))
+    log.debug('coord: ' + repr(osm.pixel_point_to_coordinate(pixel_position)))
 
     im_view = Image.new(mode="RGB", size=(pixels_x, pixels_y))
 
-    pixel_position_round = osm.pixel_point_round(pixel_position)
-
-    # load all tiles
+    # load and stitch all tiles for current frame
     for tile in viewport_tiles:
         tile_pixel_ref = osm.tile_point_to_pixel_point(tile)
         tile_path = get_tile_path(tile, tile_directory)
@@ -243,7 +238,6 @@ def build_image(pixel_position, viewport_offsets, pixels_x, pixels_y, tile_direc
 
         im_view.paste(im_tile, (tile_offset_x, tile_offset_y), mask=None)
 
-    
     # im_view.show()
     return im_view
 
@@ -256,7 +250,7 @@ def main(args):
     pixels_x = int(args['--viewport-x'])
     pixels_y = int(args['--viewport-y'])
 
-    output_temp_file = output_file + '_.mp4'
+    output_temp_file = output_file + 'temp.mp4'
 
     log.info('gpx_filename: %s' % gpx_filename)
     log.info('output_file:  %s' % output_file)
