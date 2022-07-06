@@ -9,11 +9,10 @@ import sys
 from collections import namedtuple
 import logging
 
-from lib import openstreetmaps as osm  # pylint: disable=E0401
+from . import openstreetmaps as osm
 
 try:
     from PIL import Image
-    # from PIL import ImageDraw, ImageColor, ImageFont
 except ImportError as e:
     installs = ['Pillow']
     sys.stderr.write('Error: %s\nTry:\n    pip install --user %s\n' % (e, ' '.join(installs)))

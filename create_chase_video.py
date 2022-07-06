@@ -176,7 +176,6 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
     color = (40, 40, 255)
     thickness = 3
 
-    # fourcc = cv2.VideoWriter_fourcc(*'H264')
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     video = cv2.VideoWriter(output_file, fourcc, float(fps), (pixels_x, pixels_y))
 
@@ -203,11 +202,6 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
         while tpos_adj < current_time and len(track_pixel_ts_pairs) > 0:
             pixel_pos, timestamp = track_pixel_ts_pairs.pop(0)
 
-            # xpos = point[0]
-            # ypos = point[1]
-            # xpos = int(round(point[0], 0))
-            # ypos = int(round(point[1], 0))
-
             tpos = timestamp - start_time
             if tpos == tpos_last:
                 # Telemetry is recorded at 18Hz, so if we already have a point at this time, skip ahead
@@ -216,22 +210,8 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
                 tpos_last = tpos
                 tpos_adj = tpos
 
-            # xlast = xpos
-            # ylast = ypos
-
             pixel_pos_last = pixel_pos
 
-        # viewport_tiles = get_tiles_in_viewport(pixel_pos_last, viewport_offsets)
-        # # load all tiles
-        # for tile in viewport_tiles:
-        #     tile_path = get_tile_path(tile, tile_directory)
-
-        #     image = cv2.imread(tile_path)
-        #     large_img[y_offset:y_end,x_offset:x_end] = small_img
-        #     cv2_imshow(large_img)
-
-        # print('pixel_point_last: ' + repr(pixel_pos_last))
-        # print('viewport_tiles: ' + repr(viewport_tiles))
         image = build_image(pixel_pos_last, viewport_offsets, pixels_x, pixels_y, tile_directory)
 
         cv_image = np.array(image) 
@@ -276,7 +256,7 @@ def main(args):
     pixels_x = int(args['--viewport-x'])
     pixels_y = int(args['--viewport-y'])
 
-    output_temp_file = output_file + '_'
+    output_temp_file = output_file + '_.mp4'
 
     log.info('gpx_filename: %s' % gpx_filename)
     log.info('output_file:  %s' % output_file)

@@ -7,7 +7,7 @@ Usage:
 
 Options:
   -h --help                 Show this screen.
-  --output=<filename>       Output filename [default: output.avi].
+  --output=<filename>       Output filename [default: output.mp4].
   --tile-cache=<directory>  Tile cache directory [default: tiles].
   --grid-lines              Add tile lon/lat gridlines to output.
   --viewport-x=<pixels>     Output video viewport x dimension pixels [default: 1022].
@@ -239,7 +239,7 @@ def generate_map_video(background_image, track_points, output_file, fps=25):
     color = (40, 40, 255)
     thickness = 3
 
-    fourcc = cv2.VideoWriter_fourcc(*'H264')
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     video = cv2.VideoWriter(output_file, fourcc, float(fps), (width, height))
 
     xpos = int(round(track_points[0][0], 0))
@@ -293,7 +293,7 @@ def main(args):
     margin_pixels = 10
 
     background_file = output_file + '.background.png'
-    output_temp_file = output_file + '_'
+    output_temp_file = output_file + '_.mp4'
 
     log.info('gpx_filename: %s' % gpx_filename)
     log.info('output_file:  %s' % output_file)

@@ -13,7 +13,7 @@ import logging
 import json
 import dateutil.parser as dup
 
-import openstreetmaps as osm
+from . import openstreetmaps as osm
 
 try:
     from docopt import docopt
