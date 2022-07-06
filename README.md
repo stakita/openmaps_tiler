@@ -27,11 +27,41 @@ One complicating factor is that the y-axis for TilePoint and PixelPoint space ru
 
 ## Scripts
 
-### create_chase_video.py - Generate chase video
+### tile_download.py
+
+This tool allows for manual download of tiles based on longitude and latitude. Mostly for testing.
+
+### create_overview_video.py - Generate track overview video
+
+This tool takes a gpx file and generates an overview video. This is basically where the entire track is contained in one view and the position updates over time.
+
+![Overview example](./doc/overview_example.png)
+
+The process for generating this is as follows:
+
+1. Calculate the bounds of the view based on:
+   
+   * viewport dimensions
+   
+   * track extents
+   
+   * boundary margin constraints
+
+2. Generate background image
+   
+   * download tiles
+   
+   * assemble background image
+   
+   * scale and crop to viewport dimensions
+
+3* Generate video annotating location at each point in time
+
+### create_chase_video.py - Generate track chase video
 
 This tool takes a gpx file and generates a chase video which is a view where the current location is centered in the viewport and the map shifts as the location updates. The view contains the track of points over the whole session. The idea here is that it is a close up of the state around the current position.
 
-![](./doc/chase_example.png)
+![Chase example](./doc/chase_example.png)
 
 #### Process
 
