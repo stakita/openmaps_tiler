@@ -150,8 +150,6 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
     Takes a list of tuples indicating track position and time: (PixelPoint(), timestamp)
     Renders video frames based on position composing frame based on tiles within the viewport.
     '''
-    im_canvas = np.zeros((pixels_x, pixels_y, 3), np.uint8)
-
     x_portal_offset = int(pixels_x / 2)
     y_portal_offset = int(pixels_y / 2)
 
@@ -176,8 +174,6 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video = cv2.VideoWriter(output_file, fourcc, float(fps), (pixels_x, pixels_y))
 
-    # xpos = int(round(track_points[0][0], 0))
-    # ypos = int(round(track_points[0][1], 0))
     pixel_pos = track_pixel_ts_pairs[0][0]
     # TODO: confirm that track_pixel_ts_pairs[0][1] != start_time under some circumstances
     tpos = track_pixel_ts_pairs[0][1] - start_time 
