@@ -29,9 +29,9 @@ from collections import namedtuple
 
 logging.basicConfig(level=logging.INFO, format='(%(threadName)-10s) %(message)-s')
 
-from lib import openstreetmaps as osm
-from lib import gpx
-from lib import utils
+from openstreetmaps_tiler import openstreetmaps as osm
+from openstreetmaps_tiler import gpx
+from openstreetmaps_tiler import utils
 
 try:
     from docopt import docopt
