@@ -1,9 +1,19 @@
+#!/usr/bin/env python3
+#
+# GPX file wrapper (pretty unintelligent) for extracting pertinent information from GoPro GPX files.
+#
+# 2022-06-29
+# Simon M Takita <smtakita@gmail.com>
+#
+# Released under GNU GENERAL PUBLIC LICENSE v3. (Use at your own risk)
+#
+
 import sys
 import logging
 import json
 import dateutil.parser as dup
 
-from lib import openstreetmaps as osm
+import openstreetmaps as osm
 
 try:
     from docopt import docopt

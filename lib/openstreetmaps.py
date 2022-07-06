@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+# OpenStreetMap utility module. This allows for translation between:
+#   1. Coordinate space - longitude, latitude
+#   2. Tile space - representation of OpenStreetMaps tiles where integer portion is tile coordinates
+#   3. Pixel space - representation of OpenStreetMaps tiles referenced by pixel offset
+#
 #
 # 2022-06-29
 # Simon M Takita <smtakita@gmail.com>
@@ -19,6 +23,9 @@ except ImportError as e:
     sys.exit(1)
 
 log = logging.getLogger(__name__)
+
+
+# Core types - these should probably be objects and methods rather than tuples and transform functions
 
 Coordinate = namedtuple("Coordinate", "lon lat")
 TilePoint = namedtuple("TilePoint", "x y zoom")
@@ -86,7 +93,7 @@ def pixel_point_to_tile_point(pixel_point):
 
 
 def tile_reference(tile_point):
-    ''' Truncate a TilePoint object fields (possilby floats) to tile reference values (floor integers). '''
+    ''' Truncate a TilePoint object fields (possibly floats) to tile reference values (floor integers). '''
     tile_ref = TilePoint(int(tile_point.x), int(tile_point.y), int(tile_point.zoom))
     return tile_ref    
 

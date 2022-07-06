@@ -1,3 +1,10 @@
+# Utility classes and functions supporting the top-level scripts
+#
+# 2022-06-29
+# Simon M Takita <smtakita@gmail.com>
+#
+# Released under GNU GENERAL PUBLIC LICENSE v3. (Use at your own risk)
+#
 import sys
 from collections import namedtuple
 import logging

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-create_chase_video.py - Create traak chase video from GPX data
+create_chase_video.py - Create track chase video from GPX data
 
 Usage:
   create_chase_video.py <gpx-data> <zoom-factor> [--output=<filename>] [--tile-cache=<directory>] [--viewport-x=<pixels>] [--viewport-y=<pixels>]

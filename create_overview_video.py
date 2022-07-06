@@ -3,20 +3,17 @@
 create_overview_video.py - Create track overview video from GPX data
 
 Usage:
-  create_overview_video.py <gpx-data> [--output=<filename>] [--tile-cache=<directory>] [--grid-lines]
+  create_overview_video.py <gpx-data> [--output=<filename>] [--tile-cache=<directory>] [--grid-lines] [--viewport-x=<pixels>] [--viewport-y=<pixels>]
 
 Options:
   -h --help                 Show this screen.
   --output=<filename>       Output filename [default: output.avi].
   --tile-cache=<directory>  Tile cache directory [default: tiles].
-  --grid-lines              Add tile lon/lat gridlines to ouptut.
+  --grid-lines              Add tile lon/lat gridlines to output.
+  --viewport-x=<pixels>     Output video viewport x dimension pixels [default: 1022].
+  --viewport-y=<pixels>     Output video viewport x dimension pixels [default: 1022].
 '''
-# TODO: other options:
-#   pixels_x = output x size in pixels
-#   pixels_y = output y size in pixels
-#   fps
-#   tstart
-#   tstop
+# TODO: For timing offsets between the GPX data and video, need to support: tstart, tstop
 import sys
 import logging
 import os
@@ -219,7 +216,7 @@ def draw_track_points(im_background, image_pixel_coords):
     return im_background
 
 
-def generate_map_video(background_image, track_points, output_file, fps=25): #, tstart, tfinish):
+def generate_map_video(background_image, track_points, output_file, fps=25):
     image = cv2.imread(background_image)
     height, width, _ = image.shape
     print(height, width)
@@ -290,10 +287,10 @@ def main(args):
     output_file = args['--output']
     tile_directory = args['--tile-cache']
     grid_lines = args['--grid-lines']
+    pixels_x = int(args['--viewport-x'])
+    pixels_y = int(args['--viewport-y'])
 
     margin_pixels = 10
-    pixels_x = 1022
-    pixels_y = 1022
 
     background_file = output_file + '.background.png'
     output_temp_file = output_file + '_'
@@ -310,7 +307,7 @@ def main(args):
     track_extents = utils.get_track_geo_extents(gpx_data.all_points())
     zoom, boundary_coord_extents = utils.maximize_zoom(track_extents, pixels_x, pixels_y, margin_pixels)
 
-    # Calculate expanded aboundary extents
+    # Calculate expanded boundary extents
     adjusted_boundary_coord_extents, final_scale_factor = calculate_adjusted_boundary_extents(boundary_coord_extents, zoom, margin_pixels, pixels_x, pixels_y)
 
     print('final_scale_factor: %r' % final_scale_factor)
@@ -337,7 +334,7 @@ def main(args):
 
     # Generate video
     track_timestamp_pixel_points = generate_scaled_track_pixel_points_with_timestamp(boundary_pixel_extents.lo(), zoom, gpx_data.all_points(), final_scale_factor)
-    generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file) #, fps, tstart, tfinish)
+    generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file)
 
     # Copy over temp file to final filename
     shutil.move(output_temp_file, output_file)
