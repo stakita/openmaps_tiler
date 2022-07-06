@@ -21,6 +21,8 @@ import math
 import copy
 import shutil
 
+logging.basicConfig(level=logging.INFO, format='(%(threadName)-10s) %(message)-s')
+
 from lib import openstreetmaps as osm
 from lib import gpx
 from lib import utils
@@ -115,7 +117,7 @@ def generate_base_background_image(boundary_coord_extents, track_extents, zoom, 
         im_row = None
         for lat_tile in range(tile_ref_lo.y, tile_ref_hi.y + 1):
             key = (lon_tile, lat_tile)
-            print(lon_tile, lat_tile)
+            log.debug(lon_tile, lat_tile)
 
             im = Image.open(file_map[key]).convert('RGB')
 
@@ -219,22 +221,22 @@ def draw_track_points(im_background, image_pixel_coords):
 def generate_map_video(background_image, track_points, output_file, fps=25):
     image = cv2.imread(background_image)
     height, width, _ = image.shape
-    print(height, width)
+    log.debug(height, width)
 
     start_time = track_points[0][2]
     finish_time =  track_points[-1][2]
 
-    print(start_time)
-    print(finish_time)
+    log.info(start_time)
+    log.info(finish_time)
     total_seconds = finish_time - start_time
-    print(total_seconds)
+    log.info(total_seconds)
 
     frame_start = 0
     frame_finish = int(total_seconds * fps)
     frames = int(total_seconds * fps)
 
-    print('frame_start: ', frame_start, frame_start / fps)
-    print('frame_finish:', frame_finish, frame_finish / fps)
+    log.info('frame_start: %d %f' % (frame_start, frame_start / fps))
+    log.info('frame_finish: %d %f' % (frame_finish, frame_finish / fps))
 
     color = (40, 40, 255)
     thickness = 3
@@ -254,7 +256,7 @@ def generate_map_video(background_image, track_points, output_file, fps=25):
     for frame in range(frame_start, frame_finish):
         update_period = 1000
         if frame % update_period == 0:
-            print('%3.2f %d %d' % (frame / fps, frame, frames))
+            log.info('%3.2f %d %d' % (frame / fps, frame, frames))
 
         current_time = frame / fps
 
@@ -310,7 +312,7 @@ def main(args):
     # Calculate expanded boundary extents
     adjusted_boundary_coord_extents, final_scale_factor = calculate_adjusted_boundary_extents(boundary_coord_extents, zoom, margin_pixels, pixels_x, pixels_y)
 
-    print('final_scale_factor: %r' % final_scale_factor)
+    log.debug('final_scale_factor: %r' % final_scale_factor)
 
     # Generate base background image
     im_full, image_pixel_ref = generate_base_background_image(adjusted_boundary_coord_extents, track_extents, zoom, tile_directory, grid_lines)
