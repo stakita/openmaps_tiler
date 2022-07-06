@@ -284,7 +284,8 @@ def generate_map_video(background_image, track_points, output_file, fps=25):
     video.release()
 
 
-def main(args):
+def main():
+    args = docopt(__doc__)
     gpx_filename = args['<gpx-data>']
     output_file = args['--output']
     tile_directory = args['--tile-cache']
@@ -341,7 +342,7 @@ def main(args):
     # Copy over temp file to final filename
     shutil.move(output_temp_file, output_file)
 
+
 if __name__ == '__main__':
-    arguments = docopt(__doc__)
-    sys.exit(main(arguments))
+    main()
 

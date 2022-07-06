@@ -63,8 +63,9 @@ def markup_tile(tile_point, tile_filename, markup_filename, color='blue'):
     im.save(markup_filename, 'PNG')
 
 
-def main(args):
-    logging.debug(args)
+def main():
+    args = docopt(__doc__)
+
     lat_deg = float(args['--lat'])
     lon_deg = float(args['--long'])
     zoom = float(args['--zoom'])
@@ -90,6 +91,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    arguments = docopt(__doc__)
-    sys.exit(main(arguments))
+    main()
 

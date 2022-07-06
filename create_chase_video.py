@@ -238,7 +238,9 @@ def build_image(pixel_position, viewport_offsets, pixels_x, pixels_y, tile_direc
     return im_view
 
 
-def main(args):
+def main():
+    args = docopt(__doc__)
+
     gpx_filename = args['<gpx-data>']
     zoom_factor = int(args['<zoom-factor>'])
     output_file = args['--output']
@@ -279,6 +281,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    arguments = docopt(__doc__)
-    sys.exit(main(arguments))
-
+    main()
