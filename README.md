@@ -55,7 +55,7 @@ The process for generating this is as follows:
    
    * scale and crop to viewport dimensions
 
-3* Generate video annotating location at each point in time
+3. Generate video annotating location at each point in time
 
 ### create_chase_video.py - Generate track chase video
 
