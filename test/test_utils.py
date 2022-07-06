@@ -6,7 +6,7 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-from lib import utils  # pylint: disable=E0401
+from openstreetmaps_tiler import utils  # pylint: disable=E0401
 
 
 def test_get_track_geo_extents():
