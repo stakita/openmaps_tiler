@@ -12,12 +12,6 @@ This repository contains two main scripts for generating these views as well as 
 
 ## Installation
 
-Installation by pip to user enviroment (***repository is currently private***):
-
-```
-pip install --user git+ssh://git@github.com/stakita/openmaps_tiler
-```
-
 Installation by pip from github:
 
 ```
