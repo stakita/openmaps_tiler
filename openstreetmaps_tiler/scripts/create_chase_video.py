@@ -26,6 +26,7 @@ import math
 import copy
 import shutil
 from collections import namedtuple
+from functools import lru_cache
 
 logging.basicConfig(level=logging.INFO, format='(%(threadName)-10s) %(message)-s')
 
@@ -205,7 +206,7 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
 
             pixel_pos_last = pixel_pos
 
-        image = build_image(pixel_pos_last, viewport_offsets, pixels_x, pixels_y, tile_directory)
+        image = build_image(osm.pixel_point_round(pixel_pos_last), viewport_offsets, pixels_x, pixels_y, tile_directory)
 
         cv_image = np.array(image) 
         cv_image = cv_image[:, :, ::-1].copy() # Convert RGB to BGR 
@@ -216,6 +217,7 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
     video.release()
 
 
+@lru_cache(100)
 def build_image(pixel_position, viewport_offsets, pixels_x, pixels_y, tile_directory):
     viewport_tiles = get_tiles_in_viewport(pixel_position, viewport_offsets)
     log.debug('viewport_tiles: ' + repr(viewport_tiles))
