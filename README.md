@@ -1,4 +1,4 @@
-# openmaps_tiler
+# openstreetmaps_tiler
 
 This repository contains tools for ingesting [GPX data](https://en.wikipedia.org/wiki/GPS_Exchange_Format) from GoPro video files and generating video files representing the location and time from the stream as well as representing the overall location track as a background annotation. The intention is to have two main view types:
 
