@@ -31,7 +31,7 @@ try:
     from docopt import docopt
     from PIL import Image
     from PIL import ImageDraw, ImageColor, ImageFont
-    from cv2 import cv2
+    import cv2
 except ImportError as e:
     installs = ['docopt', 'Pillow', 'opencv-python']
     sys.stderr.write('Error: %s\nTry:\n    pip install --user %s\n' % (e, ' '.join(installs)))

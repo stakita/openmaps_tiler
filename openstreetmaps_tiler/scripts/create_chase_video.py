@@ -38,7 +38,7 @@ try:
     from docopt import docopt
     from PIL import Image
     from PIL import ImageDraw, ImageColor, ImageFont
-    from cv2 import cv2
+    import cv2
     import numpy as np
 except ImportError as e:
     installs = ['docopt', 'Pillow', 'opencv-python', 'numpy']
