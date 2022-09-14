@@ -10,7 +10,6 @@
 
 import sys
 import logging
-import json
 import dateutil.parser as dup
 
 from . import openstreetmaps as osm
@@ -40,7 +39,7 @@ def gpx_points_to_coordinate_timestamp_tuples(gpx_points):
 
 
 class Gpx:
-    
+
     def __init__(self, gpx_data):
         log.debug('Parsing gpx_data')
         self.doc = xmltodict.parse(gpx_data)
