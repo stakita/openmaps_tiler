@@ -3,7 +3,7 @@
 create_overview_video.py - Create track overview video from GPX data
 
 Usage:
-  create_overview_video.py <gpx-data> [--output=<filename>] [--tile-cache=<directory>] [--grid-lines] [--viewport-x=<pixels>] [--viewport-y=<pixels>]
+  create_overview_video.py <gpx-data> [--output=<filename>] [--tile-cache=<directory>] [--grid-lines] [--viewport-x=<pixels>] [--viewport-y=<pixels>] [--fps=<fps>]
 
 Options:
   -h --help                 Show this screen.
@@ -12,6 +12,7 @@ Options:
   --grid-lines              Add tile lon/lat gridlines to output.
   --viewport-x=<pixels>     Output video viewport x dimension pixels [default: 1022].
   --viewport-y=<pixels>     Output video viewport x dimension pixels [default: 1022].
+  --fps=<fps>               Frames per second of output video [default: 25].
 '''
 # TODO: For timing offsets between the GPX data and video, need to support: tstart, tstop
 import sys
@@ -171,7 +172,7 @@ def generate_base_background_image(boundary_coord_extents, track_extents, zoom, 
         color = ImageColor.getrgb('red')
 
         track_tile_extents = track_extents.to_tile_extents(zoom)
-        track_lo = track_tile_extents.lo() 
+        track_lo = track_tile_extents.lo()
         track_hi = track_tile_extents.hi()
 
         x_offset = (track_lo.x - math.floor(tile_ref_lo.x)) * 256
@@ -292,6 +293,7 @@ def main():
     grid_lines = args['--grid-lines']
     pixels_x = int(args['--viewport-x'])
     pixels_y = int(args['--viewport-y'])
+    fps = int(args['--fps'])
 
     margin_pixels = 10
 
@@ -337,7 +339,7 @@ def main():
 
     # Generate video
     track_timestamp_pixel_points = generate_scaled_track_pixel_points_with_timestamp(boundary_pixel_extents.lo(), zoom, gpx_data.all_points(), final_scale_factor)
-    generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file)
+    generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file, fps=fps)
 
     # Copy over temp file to final filename
     shutil.move(output_temp_file, output_file)

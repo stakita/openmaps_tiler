@@ -3,7 +3,7 @@
 create_chase_video.py - Create track chase video from GPX data
 
 Usage:
-  create_chase_video.py <gpx-data> <zoom-factor> [--output=<filename>] [--tile-cache=<directory>] [--viewport-x=<pixels>] [--viewport-y=<pixels>]
+  create_chase_video.py <gpx-data> <zoom-factor> [--output=<filename>] [--tile-cache=<directory>] [--viewport-x=<pixels>] [--viewport-y=<pixels>] [--fps=<fps>]
 
 Options:
   -h --help                 Show this screen.
@@ -11,6 +11,7 @@ Options:
   --tile-cache=<directory>  Tile cache directory [default: tiles].
   --viewport-x=<pixels>     Output video viewport x dimension pixels [default: 1022].
   --viewport-y=<pixels>     Output video viewport x dimension pixels [default: 1022].
+  --fps=<fps>               Frames per second of output video [default: 25].
 '''
 # TODO: other options:
 #   pixels_x = output x size in pixels
@@ -60,7 +61,7 @@ def load_gpx_data(gpx_filename):
 
 def download_tiles(gpx_data, zoom_factor, viewport_offsets, tile_directory):
     file_map = {}
-    
+
     for coordinate in gpx.gpx_points_to_coordinates(gpx_data.all_points()):
         pixel_point = osm.coordinate_to_pixel_point(coordinate, zoom_factor)
 
@@ -97,7 +98,7 @@ def get_tiles_in_viewport(pixel_point, viewport_offsets):
             tile_set.append(tile)
 
     return sorted(tile_set)
-    
+
 
 def get_tile_path(tile_reference, tile_directory):
     return tile_directory +'/' +'tile_%06d_%06d_%02d.png' % (tile_reference.x, tile_reference.y, tile_reference.zoom)
@@ -107,7 +108,7 @@ def annotate_tiles(gpx_data, zoom_factor, tile_directory):
 
     tile_set = {}
 
-    # Determine tiles have tracks on them    
+    # Determine tiles have tracks on them
     for coordinate in map(lambda p: osm.Coordinate(p['lon'], p['lat']), gpx_data.all_points()):
         tile_ref = osm.tile_reference(osm.coordinate_to_tile_point(coordinate, zoom_factor))
         if tile_ref not in tile_set:
@@ -177,7 +178,7 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
 
     pixel_pos = track_pixel_ts_pairs[0][0]
     # TODO: confirm that track_pixel_ts_pairs[0][1] != start_time under some circumstances
-    tpos = track_pixel_ts_pairs[0][1] - start_time 
+    tpos = track_pixel_ts_pairs[0][1] - start_time
     tpos_last = tpos
     tpos_adj = tpos
 
@@ -208,8 +209,8 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
 
         image = build_image(osm.pixel_point_round(pixel_pos_last), viewport_offsets, pixels_x, pixels_y, tile_directory)
 
-        cv_image = np.array(image) 
-        cv_image = cv_image[:, :, ::-1].copy() # Convert RGB to BGR 
+        cv_image = np.array(image)
+        cv_image = cv_image[:, :, ::-1].copy() # Convert RGB to BGR
 
         cv2.circle(cv_image, (x_portal_offset, y_portal_offset), 15, color, thickness)
         video.write(cv_image)
@@ -249,6 +250,7 @@ def main():
     tile_directory = args['--tile-cache']
     pixels_x = int(args['--viewport-x'])
     pixels_y = int(args['--viewport-y'])
+    fps = int(args['--fps'])
 
     output_temp_file = output_file + 'temp.mp4'
 
@@ -276,7 +278,7 @@ def main():
     # Compose video
     track_coordinate_ts_pairs = gpx.gpx_points_to_coordinate_timestamp_tuples(gpx_data.all_points())
     track_pixel_ts_pairs = list(map(lambda t: (osm.coordinate_to_pixel_point(t[0], zoom_factor), t[1]), track_coordinate_ts_pairs))
-    generate_map_video(track_pixel_ts_pairs, output_temp_file, tile_directory, offsets, pixels_x, pixels_y, zoom_factor)
+    generate_map_video(track_pixel_ts_pairs, output_temp_file, tile_directory, offsets, pixels_x, pixels_y, zoom_factor, fps=fps)
 
     # Copy over temp file to final filename
     shutil.move(output_temp_file, output_file)
