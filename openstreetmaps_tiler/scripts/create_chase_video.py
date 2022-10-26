@@ -147,7 +147,7 @@ def draw_track_points(im_background, image_pixel_coords):
     return im_background
 
 
-def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewport_offsets, pixels_x, pixels_y, zoom, fps=25): #, tstart, tfinish):
+def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewport_offsets, pixels_x, pixels_y, zoom, fps=25, start_time=None):
     '''
     Takes a list of tuples indicating track position and time: (PixelPoint(), timestamp)
     Renders video frames based on position composing frame based on tiles within the viewport.
@@ -155,7 +155,8 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
     x_portal_offset = int(pixels_x / 2)
     y_portal_offset = int(pixels_y / 2)
 
-    start_time = track_pixel_ts_pairs[0][1]
+    if start_time is None:
+        start_time = track_pixel_ts_pairs[0][1]
     finish_time = track_pixel_ts_pairs[-1][1]
 
     log.info(start_time)
@@ -177,7 +178,6 @@ def generate_map_video(track_pixel_ts_pairs, output_file, tile_directory, viewpo
     video = cv2.VideoWriter(output_file, fourcc, float(fps), (pixels_x, pixels_y))
 
     pixel_pos = track_pixel_ts_pairs[0][0]
-    # TODO: confirm that track_pixel_ts_pairs[0][1] != start_time under some circumstances
     tpos = track_pixel_ts_pairs[0][1] - start_time
     tpos_last = tpos
     tpos_adj = tpos
@@ -278,7 +278,7 @@ def main():
     # Compose video
     track_coordinate_ts_pairs = gpx.gpx_points_to_coordinate_timestamp_tuples(gpx_data.all_points())
     track_pixel_ts_pairs = list(map(lambda t: (osm.coordinate_to_pixel_point(t[0], zoom_factor), t[1]), track_coordinate_ts_pairs))
-    generate_map_video(track_pixel_ts_pairs, output_temp_file, tile_directory, offsets, pixels_x, pixels_y, zoom_factor, fps=fps)
+    generate_map_video(track_pixel_ts_pairs, output_temp_file, tile_directory, offsets, pixels_x, pixels_y, zoom_factor, fps=fps, start_time=gpx_data.start_time())
 
     # Copy over temp file to final filename
     shutil.move(output_temp_file, output_file)

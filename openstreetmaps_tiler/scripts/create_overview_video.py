@@ -219,12 +219,13 @@ def draw_track_points(im_background, image_pixel_coords):
     return im_background
 
 
-def generate_map_video(background_image, track_points, output_file, fps=25):
+def generate_map_video(background_image, track_points, output_file, fps=25, start_time=None):
     image = cv2.imread(background_image)
     height, width, _ = image.shape
     log.debug(height, width)
 
-    start_time = track_points[0][2]
+    if start_time is None:
+        start_time = track_points[0][2]
     finish_time =  track_points[-1][2]
 
     log.info(start_time)
@@ -339,7 +340,7 @@ def main():
 
     # Generate video
     track_timestamp_pixel_points = generate_scaled_track_pixel_points_with_timestamp(boundary_pixel_extents.lo(), zoom, gpx_data.all_points(), final_scale_factor)
-    generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file, fps=fps)
+    generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file, fps=fps, start_time=gpx_data.start_time())
 
     # Copy over temp file to final filename
     shutil.move(output_temp_file, output_file)
