@@ -26,7 +26,7 @@ import os
 import shutil
 from collections import namedtuple
 from functools import lru_cache
-import datetime
+from datetime import datetime
 from dateutil.tz import tzlocal
 
 logging.basicConfig(level=logging.INFO, format='(%(threadName)-10s) %(message)-s')

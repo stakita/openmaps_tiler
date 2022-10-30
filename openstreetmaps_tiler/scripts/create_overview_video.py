@@ -21,7 +21,7 @@ import os
 import math
 import copy
 import shutil
-import datetime
+from datetime import datetime
 from dateutil.tz import tzlocal
 
 logging.basicConfig(level=logging.INFO, format='(%(threadName)-10s) %(message)-s')
