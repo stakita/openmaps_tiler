@@ -23,11 +23,11 @@ Options:
 import sys
 import logging
 import os
-import math
-import copy
 import shutil
 from collections import namedtuple
 from functools import lru_cache
+import datetime
+from dateutil.tz import tzlocal
 
 logging.basicConfig(level=logging.INFO, format='(%(threadName)-10s) %(message)-s')
 
@@ -242,6 +242,7 @@ def build_image(pixel_position, viewport_offsets, pixels_x, pixels_y, tile_direc
 
 
 def main():
+    start_time = datetime.now(tzlocal())
     args = docopt(__doc__)
 
     gpx_filename = args['<gpx-data>']
@@ -253,6 +254,8 @@ def main():
     fps = int(args['--fps'])
 
     output_temp_file = output_file + 'temp.mp4'
+
+    log.info('start_time: %s' % start_time.isoformat())
 
     log.info('gpx_filename: %s' % gpx_filename)
     log.info('output_file:  %s' % output_file)
@@ -282,6 +285,11 @@ def main():
 
     # Copy over temp file to final filename
     shutil.move(output_temp_file, output_file)
+
+    end_time = datetime.now(tzlocal())
+    total_time = end_time - start_time
+    log.info('end_time: %s' % end_time.isoformat())
+    log.info('total_time(s): %0.3f' % total_time.total_seconds())
 
 
 if __name__ == '__main__':

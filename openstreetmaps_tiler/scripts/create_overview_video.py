@@ -21,6 +21,8 @@ import os
 import math
 import copy
 import shutil
+import datetime
+from dateutil.tz import tzlocal
 
 logging.basicConfig(level=logging.INFO, format='(%(threadName)-10s) %(message)-s')
 
@@ -287,7 +289,9 @@ def generate_map_video(background_image, track_points, output_file, fps=25, star
 
 
 def main():
+    start_time = datetime.now(tzlocal())
     args = docopt(__doc__)
+
     gpx_filename = args['<gpx-data>']
     output_file = args['--output']
     tile_directory = args['--tile-cache']
@@ -300,6 +304,8 @@ def main():
 
     background_file = output_file + '.background.png'
     output_temp_file = output_file + '.temp.mp4'
+
+    log.info('start_time: %s' % start_time.isoformat())
 
     log.info('gpx_filename: %s' % gpx_filename)
     log.info('output_file:  %s' % output_file)
@@ -344,6 +350,11 @@ def main():
 
     # Copy over temp file to final filename
     shutil.move(output_temp_file, output_file)
+
+    end_time = datetime.now(tzlocal())
+    total_time = end_time - start_time
+    log.info('end_time: %s' % end_time.isoformat())
+    log.info('total_time(s): %0.3f' % total_time.total_seconds())
 
 
 if __name__ == '__main__':
