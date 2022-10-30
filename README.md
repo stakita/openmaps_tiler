@@ -15,7 +15,7 @@ This repository contains two main scripts for generating these views as well as 
 Installation by pip from github:
 
 ```
-pip install --user git+https://github.com/stakita/openmaps_tiler
+pip install --user git+https://github.com/stakita/openstreetmaps_tiler
 ```
 
 ## Data Types
@@ -48,19 +48,19 @@ This tool takes a gpx file and generates an overview video. This is basically wh
 The process for generating this is as follows:
 
 1. Calculate the bounds of the view based on:
-   
+
    * viewport dimensions
-   
+
    * track extents
-   
+
    * boundary margin constraints
 
 2. Generate background image
-   
+
    * download tiles
-   
+
    * assemble background image
-   
+
    * scale and crop to viewport dimensions
 
 3. Generate video annotating location at each point in time
@@ -102,11 +102,11 @@ GPX data needs to be loaded.
 To start, all tiles are downloaded so they are available to the later processes. The process for doing this is:
 
 * For each track point:
-  
+
   1. Determine the span of tiles for rendering that track point
-  
+
   2. For each tile in the set:
-     
+
      * Check if it is in the cache and download it if it isn't
 
 ##### 3. Annotate tiles
@@ -116,21 +116,21 @@ We annotate the tiles so they contain the track points so they are already prese
 Note: this is not optimized and may not be performant
 
 1. Determine the set of tiles that actually have tracks on them
-   
+
    * For each point in the position track
-     
+
      1. Determine which tile it exists on
-     
+
      2. Add this tile to the set of annotation tiles
 
 2. For each tile in the set of annotation tiles
-   
+
    * For each point in the position track
-     
+
      1. Collect all points that occur in that given tile
-     
+
      2. Draw this set of points on the tile
-   
+
    . Save the tile back to the cache
 
 ##### 4. Compose video
@@ -150,15 +150,15 @@ This requires the following steps:
 3. Calculate the viewport offset from the current location pixel position in pixels
 
 4. Determine the set tiles that are required for the render
-   
+
    * Generate a list of **tile** and **pixel reference point** pairs for each required tile
 
 5. Render the frame:
-   
+
    1. Assemble each of the tiles in render space
-   
+
    2. Crop to the viewport
-   
+
    3. Add position point marker
 
 6. Append the frame to the video
