@@ -351,8 +351,8 @@ def main():
         track_timestamp_pixel_points = generate_scaled_track_pixel_points_with_timestamp(boundary_pixel_extents.lo(), zoom, gpx_data.all_points(), final_scale_factor)
         generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file, fps=fps, start_time=gpx_data.start_time())
 
-    # Copy over temp file to final filename
-    shutil.move(output_temp_file, output_file)
+        # Copy over temp file to final filename
+        shutil.move(output_temp_file, output_file)
 
     end_time = datetime.now(tzlocal())
     total_time = end_time - start_time
