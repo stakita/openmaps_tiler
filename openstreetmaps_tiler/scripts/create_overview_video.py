@@ -3,7 +3,7 @@
 create_overview_video.py - Create track overview video from GPX data
 
 Usage:
-  create_overview_video.py <gpx-data> [--output=<filename>] [--tile-cache=<directory>] [--grid-lines] [--viewport-x=<pixels>] [--viewport-y=<pixels>] [--fps=<fps>]
+  create_overview_video.py <gpx-data> [--output=<filename>] [--tile-cache=<directory>] [--grid-lines] [--viewport-x=<pixels>] [--viewport-y=<pixels>] [--fps=<fps>] [--no-video]
 
 Options:
   -h --help                 Show this screen.
@@ -13,6 +13,7 @@ Options:
   --viewport-x=<pixels>     Output video viewport x dimension pixels [default: 1022].
   --viewport-y=<pixels>     Output video viewport x dimension pixels [default: 1022].
   --fps=<fps>               Frames per second of output video [default: 25].
+  --no-video                Don't generate video - only output background image.
 '''
 # TODO: For timing offsets between the GPX data and video, need to support: tstart, tstop
 import sys
@@ -299,6 +300,7 @@ def main():
     pixels_x = int(args['--viewport-x'])
     pixels_y = int(args['--viewport-y'])
     fps = int(args['--fps'])
+    generate_video = not bool(args['--no-video'])
 
     margin_pixels = 10
 
@@ -322,7 +324,7 @@ def main():
     # Calculate expanded boundary extents
     adjusted_boundary_coord_extents, final_scale_factor = calculate_adjusted_boundary_extents(boundary_coord_extents, zoom, margin_pixels, pixels_x, pixels_y)
 
-    log.debug('final_scale_factor: %r' % final_scale_factor)
+    log.info('final_scale_factor: %r' % final_scale_factor)
 
     # Generate base background image
     im_full, image_pixel_ref = generate_base_background_image(adjusted_boundary_coord_extents, track_extents, zoom, tile_directory, grid_lines)
@@ -345,8 +347,9 @@ def main():
     im_full_resize.save(background_file)
 
     # Generate video
-    track_timestamp_pixel_points = generate_scaled_track_pixel_points_with_timestamp(boundary_pixel_extents.lo(), zoom, gpx_data.all_points(), final_scale_factor)
-    generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file, fps=fps, start_time=gpx_data.start_time())
+    if generate_video:
+        track_timestamp_pixel_points = generate_scaled_track_pixel_points_with_timestamp(boundary_pixel_extents.lo(), zoom, gpx_data.all_points(), final_scale_factor)
+        generate_map_video(background_file, track_timestamp_pixel_points, output_temp_file, fps=fps, start_time=gpx_data.start_time())
 
     # Copy over temp file to final filename
     shutil.move(output_temp_file, output_file)
