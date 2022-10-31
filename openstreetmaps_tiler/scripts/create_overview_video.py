@@ -121,7 +121,7 @@ def generate_base_background_image(boundary_coord_extents, track_extents, zoom, 
         im_row = None
         for lat_tile in range(tile_ref_lo.y, tile_ref_hi.y + 1):
             key = (lon_tile, lat_tile)
-            log.debug(lon_tile, lat_tile)
+            log.debug('lon_tile: {}, lat_tile: {}'.format(lon_tile, lat_tile))
 
             im = Image.open(file_map[key]).convert('RGB')
 
