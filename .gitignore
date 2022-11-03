@@ -2,3 +2,5 @@
 ./*.png
 tiles/*.png
 .vscode/
+build/*
+*.egg-info/
